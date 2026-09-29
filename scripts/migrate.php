@@ -73,18 +73,20 @@ foreach ($pending as $file) {
     $sql = (string) file_get_contents($file);
     echo "Applying $name ... ";
     try {
-        $pdo->beginTransaction();
+        // NOTE: MySQL/MariaDB DDL (CREATE TABLE ...) causes an implicit
+        // COMMIT, so migrations must NOT run inside an explicit transaction.
+        // Each file is applied as a whole, then recorded as applied.
         $pdo->exec($sql);
         $stmt = $pdo->prepare('INSERT INTO schema_migrations (migration) VALUES (?)');
         $stmt->execute([$name]);
-        $pdo->commit();
         echo "OK\n";
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
         echo "FAILED\n";
         fwrite(STDERR, "  " . $e->getMessage() . PHP_EOL);
+        fwrite(
+            STDERR,
+            "  WARNING: partial objects from '$name' may exist; drop them before retrying.\n"
+        );
         exit(1);
     }
 }
