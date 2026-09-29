@@ -38,9 +38,45 @@ main.container { padding: 2rem 0 3rem; min-height: 60vh; }
 .site-footer { border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem; padding: 1.5rem 0; background: var(--surface); }
 .site-footer a { color: var(--muted); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Alerts (flash messages) */
+.alert { padding: .75rem 1rem; border-radius: var(--radius); margin: 1rem 0; font-size: .95rem; }
+.alert-error { background: #2a1216; border: 1px solid var(--accent); color: #ffb3c2; }
+.alert-success { background: #10241a; border: 1px solid #1e7a45; color: #9fe3bd; }
+.field-error { display: block; color: #ff8fa3; font-size: .85rem; margin-top: .3rem; }
+
+/* Auth forms */
+.auth-card { max-width: 26rem; margin: 2rem auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; }
+.auth-card-wide { max-width: 32rem; }
+.auth-card h1 { margin: 0 0 .25rem; font-size: 1.5rem; }
+.auth-card form { margin-top: 1.25rem; }
+label { display: block; font-weight: 600; font-size: .9rem; margin: 1rem 0 .3rem; }
+label .optional { color: var(--muted); font-weight: 400; }
+input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="date"], input[type="number"], select, textarea {
+  width: 100%; padding: .65rem .75rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--text); font-size: 1rem; font-family: inherit;
+}
+input:focus-visible { border-color: var(--accent); }
+.btn-block { display: block; width: 100%; margin-top: 1.5rem; text-align: center; }
+.muted { color: var(--muted); font-size: .9rem; }
+.auth-card a { color: var(--accent-hover); }
+
+/* Nav extras */
+.nav-user { color: var(--muted); font-size: .9rem; margin-left: 1rem; }
+.nav-inline { display: inline; margin-left: .5rem; }
+.link-btn { background: none; border: 0; color: var(--muted); cursor: pointer; font: inherit; font-size: .95rem; padding: 0; text-decoration: underline; }
+.link-btn:hover, .link-btn:focus { color: var(--text); }
+
+/* Prose (privacy notice) */
+.prose { max-width: 46rem; }
+.prose h1 { margin-bottom: .25rem; }
+.prose h2 { margin-top: 1.75rem; font-size: 1.1rem; }
+.prose li { margin-bottom: .3rem; }
+
 @media (max-width: 640px) {
   nav a { margin-left: .6rem; font-size: .85rem; }
   main.container { padding-top: 1.25rem; }
+  .auth-card { margin: 1rem auto; padding: 1.25rem; }
 }
 @media print {
   .site-header, .site-footer, nav, .btn { display: none !important; }

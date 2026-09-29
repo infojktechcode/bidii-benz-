@@ -86,6 +86,16 @@ final class Session
     }
 
     /**
+     * Read a value once and remove it from the session.
+     */
+    public static function pull(string $key, mixed $default = null): mixed
+    {
+        $value = $_SESSION[$key] ?? $default;
+        unset($_SESSION[$key]);
+        return $value;
+    }
+
+    /**
      * Rotate the session ID (call on login and privilege change).
      */
     public static function regenerate(): void

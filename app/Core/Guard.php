@@ -62,9 +62,42 @@ final class Guard
     public static function requireLogin(string $loginPath = '/login'): void
     {
         if (!self::check()) {
+            // Remember where the user was heading (application-relative path).
+            $intended = self::intendedPath($_SERVER['REQUEST_URI'] ?? '/');
+            if ($intended !== null) {
+                Session::set('intended', $intended);
+            }
             Session::flash('error', 'Please sign in to continue.');
             redirect($loginPath);
         }
+    }
+
+    /**
+     * Normalize a request URI into a safe application-relative path for the
+     * "intended URL" post-login redirect.
+     *
+     * Returns null when the path must NOT be remembered — in particular any
+     * protocol-relative path ("//host"), which would become an open redirect
+     * when the base path is empty (production docroot).
+     */
+    public static function intendedPath(string $uri): ?string
+    {
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            $path = '/';
+        }
+
+        // Strip the base path only on an exact boundary so that
+        // "/bidii-benz/publicity" is never mistaken for "/bidii-benz/public/...".
+        $base = View::basePath();
+        if ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {
+            $path = substr($path, strlen($base)) ?: '/';
+        }
+
+        if (!str_starts_with($path, '/') || str_starts_with($path, '//')) {
+            return null;
+        }
+        return $path;
     }
 
     /**

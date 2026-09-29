@@ -73,6 +73,7 @@ $basePath = parse_url($config->get('app_url', ''), PHP_URL_PATH) ?: '';
 if ($basePath !== '' && str_starts_with($path, $basePath)) {
     $path = substr($path, strlen($basePath)) ?: '/';
 }
+\App\Core\View::setBasePath($basePath);
 
 $router = new Router();
 require dirname(__DIR__) . '/app/routes.php';

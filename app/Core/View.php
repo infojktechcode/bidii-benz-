@@ -9,6 +9,33 @@ namespace App\Core;
  */
 final class View
 {
+    /** Base path prefix (e.g. "/bidii-benz/public" in dev, "" at production docroot). */
+    private static string $basePath = '';
+
+    public static function setBasePath(string $path): void
+    {
+        self::$basePath = rtrim($path, '/');
+    }
+
+    public static function basePath(): string
+    {
+        return self::$basePath;
+    }
+
+    /**
+     * Build an application-relative URL: url('/login') => '/bidii-benz/public/login'.
+     */
+    public static function url(string $path): string
+    {
+        if ($path === '') {
+            return self::$basePath . '/';
+        }
+        if ($path[0] !== '/') {
+            $path = '/' . $path;
+        }
+        return self::$basePath . $path;
+    }
+
     /**
      * Escape for HTML context (the ONLY way output leaves the server).
      */
