@@ -1,0 +1,9 @@
+# Deny web access to sensitive directories when the document root is the
+# project root (XAMPP default). In production the docroot is public/.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
