@@ -41,6 +41,7 @@ final class AdminController
     private BookingService $bookingService;
     private PaymentService $paymentService;
     private PhotoStorage $photos;
+    private UserRepository $users;
 
     public function __construct()
     {
@@ -49,6 +50,7 @@ final class AdminController
         $this->cars = new CarRepository($this->pdo);
         $this->bookings = new BookingRepository($this->pdo);
         $this->payments = new PaymentRepository($this->pdo);
+        $this->users = new UserRepository($this->pdo);
         $this->bookingService = new BookingService($this->bookings, $this->cars, $this->payments);
         $this->paymentService = new PaymentService($this->payments, $this->bookings, $this->config);
         $this->photos = new PhotoStorage(
@@ -66,7 +68,7 @@ final class AdminController
             'title' => 'Dashboard — Bidii Benz Rentals',
             'stats' => [
                 'cars' => $this->cars->countAll(),
-                'clients' => (new UserRepository($this->pdo))->countClients(),
+                'clients' => $this->users->countClients(),
                 'bookings' => $this->bookings->countAll(),
                 'pending_payments' => $this->payments->countAll('pending'),
                 'outstanding' => $this->bookings->outstandingBalance(),
@@ -332,6 +334,34 @@ final class AdminController
             'summary' => $errors === []
                 ? (new ReportRepository($this->pdo))->summary($range['from'], $range['to'])
                 : null,
+        ]);
+    }
+
+    // --- Clients -------------------------------------------------------------
+
+    public function clients(array $params = []): void
+    {
+        View::render('admin/clients', [
+            'title' => 'Clients — Bidii Benz Rentals',
+            'clients' => $this->users->findAllClients(),
+        ]);
+    }
+
+    public function clientDetail(array $params = []): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $client = $this->users->findClient($id);
+        if ($client === null) {
+            http_response_code(404);
+            View::render('errors/404', [], 404);
+            return;
+        }
+
+        View::render('admin/client_detail', [
+            'title' => $client['full_name'] . ' — Bidii Benz Rentals',
+            'client' => $client,
+            'bookings' => $this->bookings->findByClient($id),
+            'payments' => $this->payments->findByClient($id),
         ]);
     }
 

@@ -1,0 +1,44 @@
+# Web-root hardening for the XAMPP layout, where the document root is the
+# PROJECT folder and the app is reached at /public/. In production the
+# document root is public/, so nothing outside public/ exists on the web at
+# all; this file closes that gap for the local/default layout.
+#
+# app/, scripts/ and storage/ already carry their own deny-all .htaccess;
+# this file covers everything else that must never be served: dotfiles
+# (.env), the Git repository, docs, tests, migrations and tooling.
+
+Options -Indexes
+
+# Dotfiles: .env, .env.example, .gitignore, editor droppings, ...
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Tooling that sits in the project root.
+<FilesMatch "^(phpunit\.xml|phpunit\.phar|composer\.(json|lock))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+RewriteEngine On
+
+# The Git directory: its members are plain files (/.git/HEAD, /.git/config),
+# so the dotfile rule above never sees them.
+RewriteRule (^|/)\.git(/|$) - [F,L]
+
+# Project directories that must never be web-readable.
+RewriteRule ^(app|database|docs|scripts|storage|tests|vendor)(/|$) - [F,L]
+
+# Environment files by any spelling (.env, .env.local, ...).
+RewriteRule (^|/)\.env - [F,L]

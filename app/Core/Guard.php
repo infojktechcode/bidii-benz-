@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use PDO;
+
 /**
  * Server-side authorization guard. EVERY route must call one of these.
  * Frontend hiding of links is UX only and never a security control.
@@ -124,5 +126,41 @@ final class Guard
             require __DIR__ . '/../views/errors/403.php';
             exit;
         }
+    }
+
+    /**
+     * Re-check the signed-in account against the database once per request.
+     *
+     * The session only stores what was true at login time: a suspended,
+     * deleted or role-changed account would otherwise keep its privileges
+     * until the cookie expired. Returns true when the session was invalidated
+     * (the visitor has been signed out).
+     */
+    public static function revalidateSession(PDO $pdo): bool
+    {
+        $userId = self::userId();
+        if ($userId === null) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare('SELECT role, status FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        $sessionRole = self::role();
+
+        $stillValid = $user !== false
+            && $user['status'] === 'active'
+            && $sessionRole !== null
+            && $user['role'] === $sessionRole;
+
+        if ($stillValid) {
+            return false;
+        }
+
+        foreach (['user_id', 'role', 'user_name'] as $key) {
+            Session::remove($key);
+        }
+        Session::flash('error', 'Your session is no longer valid. Please sign in again.');
+        return true;
     }
 }

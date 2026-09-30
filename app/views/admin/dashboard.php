@@ -47,6 +47,7 @@ $statusLabels = [
     <a class="btn" href="<?= View::e(url('/admin/bookings')) ?>">Manage bookings</a>
     <a class="btn btn-secondary" href="<?= View::e(url('/admin/payments')) ?>">Manage payments</a>
     <a class="btn btn-secondary" href="<?= View::e(url('/admin/vehicles')) ?>">Manage vehicles</a>
+    <a class="btn btn-secondary" href="<?= View::e(url('/admin/clients')) ?>">Manage clients</a>
     <a class="btn btn-secondary" href="<?= View::e(url('/admin/reports')) ?>">Reports</a>
   </div>
 

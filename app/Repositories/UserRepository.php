@@ -62,6 +62,45 @@ final class UserRepository
     }
 
     /**
+     * Admin client directory: identity, contact details and lifetime totals
+     * per client, in a single pass.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findAllClients(): array
+    {
+        return $this->pdo->query(
+            'SELECT c.id, c.full_name, u.phone, c.id_number, c.city,
+                    u.email, u.status, u.created_at,
+                    (SELECT COUNT(*) FROM bookings b WHERE b.client_id = c.id) AS booking_count,
+                    (SELECT COALESCE(SUM(p.amount), 0) FROM payments p
+                      WHERE p.client_id = c.id AND p.status = "confirmed") AS total_paid
+             FROM clients c
+             JOIN users u ON u.id = c.user_id
+             ORDER BY c.full_name ASC'
+        )->fetchAll();
+    }
+
+    /**
+     * One client's profile for the admin detail screen.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findClient(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT c.id, c.full_name, u.phone, c.id_number, c.id_type, c.city, c.address,
+                    u.email, u.status, u.created_at
+             FROM clients c
+             JOIN users u ON u.id = c.user_id
+             WHERE c.id = ? LIMIT 1'
+        );
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        return $row === false ? null : $row;
+    }
+
+    /**
      * Create a client account (users + clients) inside one transaction.
      *
      * @param array{email:string, phone:string, password_hash:string,

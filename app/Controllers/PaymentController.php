@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Audit;
 use App\Core\Config;
 use App\Core\Csrf;
 use App\Core\Guard;
@@ -132,6 +133,18 @@ final class PaymentController
         // The service refuses any non-mock M-Pesa environment before writing a
         // row, so reaching here means either the mock STK push confirmed the
         // payment or a cash/bank record is awaiting office confirmation.
+        $payment = $this->payments->findById((int) $result['payment_id']);
+        Audit::asCurrentActor(
+            'payment.initiate',
+            'payments',
+            (int) $result['payment_id'],
+            sprintf(
+                'booking=%s amount=%s method=%s',
+                $booking['booking_ref'],
+                $payment !== null ? number_format((float) $payment['amount'], 2) : 'n/a',
+                $method
+            )
+        );
         if (!empty($result['awaiting_confirmation'])) {
             Session::flash('success', 'Payment recorded. The office will confirm it shortly.');
         } else {

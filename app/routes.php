@@ -52,6 +52,8 @@ $router->post('/admin/bookings/{id}/confirm', [\App\Controllers\AdminController:
 $router->post('/admin/bookings/{id}/start', [\App\Controllers\AdminController::class, 'startBooking'], 'staff');
 $router->post('/admin/bookings/{id}/cancel', [\App\Controllers\AdminController::class, 'cancelBooking'], 'staff');
 $router->post('/admin/bookings/{id}/complete', [\App\Controllers\AdminController::class, 'completeBooking'], 'staff');
+$router->get('/admin/clients', [\App\Controllers\AdminController::class, 'clients'], 'staff');
+$router->get('/admin/clients/{id}', [\App\Controllers\AdminController::class, 'clientDetail'], 'staff');
 $router->get('/admin/payments', [\App\Controllers\AdminController::class, 'payments'], 'staff');
 $router->post('/admin/payments/{id}/confirm', [\App\Controllers\AdminController::class, 'confirmPayment'], 'staff');
 $router->post('/admin/payments/{id}/refund', [\App\Controllers\AdminController::class, 'refundPayment'], 'staff');

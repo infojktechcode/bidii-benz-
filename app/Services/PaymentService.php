@@ -108,6 +108,18 @@ final class PaymentService
         if (!in_array($env, ['mock', 'sandbox', 'live'], true)) {
             return ['ok' => false, 'error' => 'Invalid M-Pesa environment configuration.'];
         }
+        // Fail closed: mock mode confirms payments with no money moving, so it
+        // must never be reachable from a production site, whatever MPESA_ENV
+        // says. Decided BEFORE any row is written, so a refused payment never
+        // leaves an orphaned "pending" record behind. Cash/bank records are
+        // unaffected: they never auto-confirm, staff confirm them in the office.
+        if ($this->config->isProduction() && $env === 'mock' && $data['method'] === 'mpesa') {
+            return [
+                'ok' => false,
+                'error' => 'M-Pesa payments are disabled in production until real STK '
+                    . 'credentials are configured (MPESA_ENV must not be mock).',
+            ];
+        }
         // Decide BEFORE inserting a row so a refused payment never leaves an
         // orphaned "pending" record behind.
         if ($env !== 'mock') {

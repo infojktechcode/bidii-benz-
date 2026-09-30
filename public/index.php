@@ -11,12 +11,21 @@ require dirname(__DIR__) . '/app/autoload.php';
 
 use App\Core\Bootstrap;
 use App\Core\Config;
+use App\Core\Database;
+use App\Core\Guard;
 use App\Core\Log;
 use App\Core\Router;
 
 $projectRoot = dirname(__DIR__);
 
 [$config, $pdo] = Bootstrap::boot($projectRoot, false);
+
+// The session caches role/status from login time. Re-check the account on
+// every request so a suspended, deleted or demoted user loses access on the
+// next request instead of when the cookie expires.
+if (Guard::userId() !== null) {
+    Guard::revalidateSession(Database::connect($config));
+}
 
 // Security headers on every response
 header('X-Content-Type-Options: nosniff');
@@ -47,14 +56,17 @@ if ($config->get('app_debug') && !$config->isProduction()) {
     error_reporting(E_ALL);
 }
 
-set_exception_handler(static function (Throwable $e): void {
+set_exception_handler(static function (Throwable $e) use ($config): void {
     Log::error('Unhandled exception: ' . $e->getMessage(), [
         'file' => $e->getFile(),
         'line' => $e->getLine(),
     ]);
     http_response_code(500);
-    $env = getenv('APP_ENV') ?: 'development';
-    if ($env === 'development') {
+    // Same policy as display_errors above: the configured app_env decides,
+    // never the raw process environment (which may be unset or overridden).
+    // Failing closed keeps stack traces off the page whenever config is odd.
+    $showDetails = (bool) $config->get('app_debug') && !$config->isProduction();
+    if ($showDetails) {
         echo '<h1>Application error</h1><pre>' . htmlspecialchars(
             $e->getMessage() . "\n" . $e->getFile() . ':' . $e->getLine(),
             ENT_QUOTES | ENT_SUBSTITUTE,

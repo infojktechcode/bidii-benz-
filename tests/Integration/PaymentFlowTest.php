@@ -268,6 +268,52 @@ final class PaymentFlowTest extends TestCase
         self::assertSame('pending_payment', $booking['status']);
     }
 
+    public function testProductionNeverAutoConfirmsMockMpesa(): void
+    {
+        // SEC-02: mock mode confirms payments with no money moving, so it must
+        // be unreachable from a production site whatever MPESA_ENV says.
+        $service = $this->serviceWith(['app_env' => 'production']);
+        self::assertSame('mock', $service->environment(), 'the misconfiguration under test is mock + production');
+
+        $result = $service->initiatePayment([
+            'booking_id' => $this->bookingId,
+            'client_id' => $this->fixtureClientId(),
+            'phone' => '0712345678',
+            'method' => 'mpesa',
+        ]);
+
+        self::assertFalse($result['ok'], 'a client must never be able to self-confirm a booking in production');
+        self::assertStringContainsString('production', $result['error'] ?? '');
+
+        $stmt = self::$pdo->prepare('SELECT COUNT(*) FROM payments WHERE booking_id = ?');
+        $stmt->execute([$this->bookingId]);
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'the refusal happens before any row is written');
+
+        $booking = $this->bookings->findById($this->bookingId);
+        self::assertSame('pending_payment', $booking['status'], 'the booking stays unpaid');
+    }
+
+    public function testCashStillRecordsInProductionWhileMockIsBlocked(): void
+    {
+        // Cash/bank records never auto-confirm, so office collections must keep
+        // working even while M-Pesa is locked down in production.
+        $service = $this->serviceWith(['app_env' => 'production']);
+
+        $result = $service->initiatePayment([
+            'booking_id' => $this->bookingId,
+            'client_id' => $this->fixtureClientId(),
+            'phone' => '0712345678',
+            'method' => 'cash',
+        ]);
+
+        self::assertTrue($result['ok'], $result['error'] ?? '');
+        self::assertNotEmpty($result['awaiting_confirmation'] ?? null, 'cash awaits office confirmation');
+
+        $payment = $this->payments->findById((int) $result['payment_id']);
+        self::assertNotNull($payment);
+        self::assertSame('pending', $payment['status'], 'cash is never auto-confirmed, in any environment');
+    }
+
     public function testInvalidEnvironmentIsRejected(): void
     {
         $service = $this->serviceWith(['mpesa' => ['env' => 'staging']]);

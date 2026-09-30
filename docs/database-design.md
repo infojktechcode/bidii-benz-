@@ -185,10 +185,12 @@ excluded from balances and from occupancy**.
 
 ### 5. Indexes
 - `booking_days`: PK `(car_id, day)` — serves both overlap check and history.
-- `bookings`: `(car_id, pickup_date, return_date)`, `(client_id)`, `(status)`, `(pickup_date)`.
-- `payments`: `(booking_id)`, `(status)`, UNIQUE `(mpesa_receipt)` — a receipt
-  can never be applied twice.
+- `bookings`: `(car_id, pickup_date, return_date)`, `(client_id)`, `(status)`,
+  `(pickup_date)`, `(created_at)` — the last one drives the report date ranges.
+- `payments`: `(booking_id)`, `(status)`, `(created_at)`, UNIQUE `(mpesa_receipt)`
+  — a receipt can never be applied twice; `(created_at)` drives payment reports.
 - `login_attempts`: `(identifier, attempted_at)` — supports login rate limiting.
+- `audit_logs`: `(user_id)`, `(action)`, `(entity, entity_id)`, `(created_at)`.
 
 ### 6. Security-relevant constraints
 - `users.email` and `users.phone` UNIQUE → no duplicate accounts.
@@ -209,6 +211,8 @@ excluded from balances and from occupancy**.
 | 0006_create_payments.sql | payments |
 | 0007_create_audit_logs.sql | audit_logs |
 | 0008_create_login_attempts.sql | login_attempts |
+| 0009_add_bookings_created_index.sql | bookings (index `created_at`) |
+| 0010_add_payments_created_index.sql | payments (index `created_at`) |
 
 > Runner note: MySQL DDL causes an implicit commit, so migrations run **without**
 > an explicit transaction (see `scripts/migrate.php`). Each file = one statement
