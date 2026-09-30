@@ -79,6 +79,10 @@ account (see the [README](../README.md)).
       while it is empty).
 - [ ] `storage/uploads` and `storage/logs` writable by the web server, and not
       web-exposed (they sit outside `public/`).
+- [ ] Backups scheduled: `php scripts/backup.php` (database) plus separate
+      copies of `storage/uploads/` and `.env`.
+
+Step-by-step for all of the above: [deploy.md](deploy.md).
 
 ## Troubleshooting
 

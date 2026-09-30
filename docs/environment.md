@@ -2,7 +2,9 @@
 
 Everything is read from `.env` in the project root (never committed), with a
 fallback to real process environment variables. Empty/missing values fall back
-to the defaults below. See `.env.example` for a copy-ready template.
+to the defaults below. See `.env.example` for a copy-ready template. Moving a
+deployment to production (TLS, least-privilege database account, backups,
+credential rotation) is the step-by-step [deploy.md](deploy.md) runbook.
 
 ## Application
 
@@ -20,7 +22,7 @@ to the defaults below. See `.env.example` for a copy-ready template.
 | `DB_HOST` | `127.0.0.1` | MySQL host. |
 | `DB_PORT` | `3306` | MySQL port. |
 | `DB_NAME` | `bidii_benz` | Database name (must exist before migrating). |
-| `DB_USER` | `root` | Database user — use a dedicated user in production. |
+| `DB_USER` | `root` | Database user — use a dedicated least-privilege account in production ([deploy.md §4](deploy.md)). |
 | `DB_PASS` | *(empty)* | Database password. |
 | `DB_CHARSET` | `utf8mb4` | Set in code; not read from `.env`. |
 
