@@ -9,13 +9,13 @@ described in [testing.md](testing.md).
 | Role | Reach |
 |---|---|
 | `client` | Own bookings and payments only (server-side ownership checks, IDOR attempts → 403) |
-| `staff` | Whole back office: vehicles, bookings, returns, payments, clients, reports |
-| `owner` | Everything staff can do (`Guard::atLeast('staff')`) |
+| `staff` | Whole back office: vehicles, bookings, returns, payment confirmation, clients, reports, audit trail |
+| `owner` | Everything staff can do (`Guard::atLeast('staff')`) **plus money-moving actions** (payment refunds) |
 
 Every route carries its guard in `app/routes.php`; `RouteGuardTest` fails if a
 route is unguarded, if a guard value is unknown, if any `/admin/*` route is
-not `staff`, or if the public allow-list drifts from reality. Hiding a link in
-the UI is never access control.
+neither `staff` nor `owner`, or if the public allow-list drifts from reality.
+Hiding a link in the UI is never access control.
 
 **Session revalidation:** the session only remembers what was true at login,
 so each request re-checks the account (`Guard::revalidateSession`). A
@@ -58,7 +58,10 @@ Set on every response by `public/index.php`:
 - `X-Powered-By` removed
 - `Content-Security-Policy: default-src 'self'; img-src 'self' data:;
   style-src 'self' 'unsafe-inline'; script-src 'self'` (production only)
-- HTTPS redirect when `APP_ENV=production`
+- HTTPS redirect when `APP_ENV=production` — the `Location` host comes from the
+  configured `APP_URL`, **never** from the request `Host` header (a forged Host
+  cannot turn the redirect into an open redirect; if `APP_URL` is unusable the
+  redirect is skipped rather than trusted from the request)
 
 Error pages show message + file/line only when `APP_ENV=development` **and**
 `APP_DEBUG=1`, decided from configuration — never from the raw process
@@ -86,6 +89,10 @@ All of these return **403** over HTTP; the app under `/public/` keeps working.
 - Callbacks are authenticated with a timing-safe shared-secret comparison and
   are refused while the secret is unset.
 - Receipts are unique; refunds require a confirmed payment and an actor.
+- Refunds are **owner-only** at the route guard (`owner`); staff get 403.
+- Collection initiation is throttled: **10 attempts per session per 900 s**
+  (`RateLimiter::MAX_INITIATES_PER_WINDOW`), refused with **429** before any
+  row is written — on live M-Pesa every STK push costs money.
 
 ## Audit trail (`audit_logs`)
 
@@ -103,6 +110,10 @@ detail (500 chars). The table has **no** column that could hold a password,
 token or API credential, and `AuditTrailTest` locks that schema down. An audit
 failure is logged and never breaks the business action.
 
+The trail is readable at **`/admin/audit`** (staff+, read-only): newest first,
+filterable by action and actor, 50 rows per page, deleted users shown from the
+audit row's own role.
+
 ## Data protection
 
 Client PII (national ID, phone, address) is stored — Kenya DPA 2019 applies.
@@ -113,8 +124,10 @@ payments and audit rows is required before go-live (not yet implemented).
 
 | Item | Status |
 |---|---|
-| Production HTTPS redirect builds its `Location` from `HTTP_HOST` | Low — host header can influence the redirect target. Fix needs a canonical-host setting; deferred. |
-| Refund allowed for `staff`, not `owner` only | Product decision pending. |
 | No password reset / forgot-password flow | Not in the approved requirements. |
 | `no_show` status unreachable | Reserved in the schema; no workflow yet. |
 | Live Daraja integration | Refused rather than faked (see payments). |
+
+Resolved in Phase 8 (kept for the record): the HTTPS redirect no longer trusts
+`HTTP_HOST` (now pinned to `APP_URL`), and refunds moved from `staff` to
+`owner`-only.

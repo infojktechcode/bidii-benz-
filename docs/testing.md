@@ -8,7 +8,7 @@ php phpunit.phar --filter Name    # by class/method name
 php phpunit.phar --testsuite Unit # see phpunit.xml
 ```
 
-Current baseline: **`OK (194 tests, 1005 assertions)`** (PHP 8.3.33,
+Current baseline: **`OK (199 tests, 1032 assertions)`** (PHP 8.3.33,
 PHPUnit 10.5.65, bundled `phpunit.phar` — no Composer install needed).
 
 Integration tests open the real database and **skip themselves** with
@@ -29,14 +29,15 @@ tests/
   Integration/               real database: Schema, AuthFlow, BookingFlow,
                              BookingConcurrency, PaymentFlow, CancellationAuth,
                              ReturnWorkflow, ReportSummary, AuditTrail,
-                             SessionRevalidation, ClientDirectory
+                             SessionRevalidation, ClientDirectory,
+                             FleetAvailability
 ```
 
 ## What the suites lock down
 
 | Area | Representative guarantee |
 |---|---|
-| Router/Guards | Every route resolves to a real controller method, every non-public route is guarded, every `/admin/*` route requires `staff`, public allow-list matches reality |
+| Router/Guards | Every route resolves to a real controller method, every non-public route is guarded, every `/admin/*` route requires `staff` or `owner`, public allow-list matches reality |
 | Views | Every `View::render()` target exists (static scan — fails without a web server) |
 | Schema | All migrations applied, double booking rejected by the primary key, check constraint rejects inverted dates, unique plate, plausible seed counts |
 | Booking | Overlap prevention, lifecycle transitions, cancel frees the days, staff-only transitions |
@@ -45,26 +46,38 @@ tests/
 | Auth | Registration, login/logout, rate limiting, IDOR returns 403 |
 | Session | **Suspended / deleted / role-changed accounts are signed out on the next request** |
 | Reports | Range parsing (rejects inverted/too-long input), summaries match hand-computed expectations |
-| Audit | Actor/action/entity written, payload clipped, failures never break the action, no credential column exists |
+| Audit | Actor/action/entity written, payload clipped, failures never break the action, no credential column exists, viewer reads rows with the actor joined in |
 | Clients | Directory lists every client with totals, profile resolves, unknown id → null (404) |
+| Availability | The listing badge reads `booking_days` (same source as `isAvailable`): free car absent, booking reports its return date, cancelling releases it |
 
 ## Live HTTP checks
 
-The suites cannot see Apache, so each phase also runs an HTTP script against
-`http://localhost/bidii-benz/public/` (PHP `curl`, throw-away rows, explicit
-cleanup). Phase 7's script covers:
+The suites cannot see Apache, so run the committed smoke script against
+`http://localhost/bidii-benz/public/` with XAMPP up:
 
-- hidden paths return **403** (`.env`, `.git`, `docs/`, `tests/`, migrations,
-  `phpunit.*`, directory listing) while `/public/` keeps serving 200
-- staff sign-in → `/admin/clients` renders; suspending the account signs it
-  out on the **next** request; a role change does the same; a suspended
-  account cannot establish a session
-- mock M-Pesa initiation writes a `payment.initiate` audit row for the paying
-  client (both `mpesa` and `cash`)
-- client role receives **403** on admin pages, unknown client id → **404**
+```
+php scripts/http-smoke.php
+```
 
-Regression scripts from earlier phases (54 checks: guards, IDOR, booking
-lifecycle, returns, reports) are re-run after every change.
+**108 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
+non-zero on any failure:
+
+- hidden paths return **403** (`.env`, `.env.example`, `.git`, `docs/`,
+  `tests/`, migrations, `phpunit.*`) while `/public/` keeps serving 200
+- session revalidation: suspending / deleting / role-changing an account signs
+  it out on the **next** request
+- anonymous redirects, client **403** on every admin page, IDOR **403** on
+  other clients' bookings/confirmations, CSRF forged/missing → **403**
+- full booking lifecycle (create → cancel; staff confirm → start → complete
+  with return time; future-return refusal) with audit rows checked
+- reports rendering incl. invalid/inverted ranges
+- mock M-Pesa + cash initiation write `payment.initiate` audit rows for the
+  paying client
+- staff client directory renders, unknown id → **404**
+- Phase 8: audit viewer (staff/owner 200, client/anonymous refused, filters),
+  fleet availability badges + skip link, owner-only refund (staff 403, control
+  hidden), initiation throttle (11th attempt inside the window → **429**, no
+  payment row written)
 
 ## Updating expectations
 

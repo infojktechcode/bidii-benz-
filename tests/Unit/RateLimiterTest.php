@@ -59,4 +59,28 @@ final class RateLimiterTest extends TestCase
         $kept = RateLimiter::inWindow([9900, 9200, 9600], 10000);
         self::assertSame([9200, 9600, 9900], $kept);
     }
+
+    public function testOverLimitIsFalseBelowThePaymentInitiationCap(): void
+    {
+        $now = 10000;
+        $nine = array_fill(0, 9, $now - 100);
+        self::assertFalse(
+            RateLimiter::overLimit($nine, RateLimiter::MAX_INITIATES_PER_WINDOW, $now)
+        );
+    }
+
+    public function testOverLimitFiresAtThePaymentInitiationCapAndIgnoresStaleEntries(): void
+    {
+        $now = 10000;
+        $ten = array_fill(0, RateLimiter::MAX_INITIATES_PER_WINDOW, $now - 100);
+        self::assertTrue(RateLimiter::overLimit($ten, RateLimiter::MAX_INITIATES_PER_WINDOW, $now));
+
+        // 20 attempts, but 11 of them aged out of the 900s window: back under.
+        $stale = array_fill(0, 11, $now - 901);
+        $fresh = array_fill(0, 9, $now - 10);
+        self::assertFalse(
+            RateLimiter::overLimit(array_merge($stale, $fresh), RateLimiter::MAX_INITIATES_PER_WINDOW, $now),
+            'stale attempts must not keep a client throttled after the window'
+        );
+    }
 }

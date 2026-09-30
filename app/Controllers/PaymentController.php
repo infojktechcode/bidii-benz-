@@ -15,6 +15,7 @@ use App\Core\View;
 use App\Repositories\BookingRepository;
 use App\Repositories\PaymentRepository;
 use App\Services\PaymentService;
+use App\Services\RateLimiter;
 use App\Core\Database;
 
 /**
@@ -84,6 +85,23 @@ final class PaymentController
         if (!Csrf::validate('payment_initiate', $_POST['_csrf'] ?? null)) {
             $this->forbidCsrf();
         }
+
+        // Throttle initiations per session before anything else runs: on live
+        // M-Pesa every STK push costs money, and a hammered form should stop at
+        // 429 rather than queueing pushes. Counted per session, not per row, so
+        // no booking data is written by a blocked attempt.
+        $now = time();
+        $raw = Session::get('pay_init_times', []);
+        $times = is_array($raw)
+            ? array_values(array_filter(array_map('intval', $raw), static fn (int $t): bool => $t > 0))
+            : [];
+        if (RateLimiter::overLimit($times, RateLimiter::MAX_INITIATES_PER_WINDOW, $now)) {
+            http_response_code(429);
+            View::render('errors/429', [], 429);
+            return;
+        }
+        $times[] = $now;
+        Session::set('pay_init_times', RateLimiter::inWindow($times, $now));
 
         $bookingId = (int) ($params['bookingId'] ?? 0);
         $booking = $this->bookings->findById($bookingId);

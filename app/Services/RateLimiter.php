@@ -16,11 +16,24 @@ final class RateLimiter
     public const WINDOW_SECONDS = 900;
     public const MAX_PER_IDENTIFIER = 5;
     public const MAX_PER_IP = 20;
+    /** M-Pesa STK initiations allowed per client session inside the window. */
+    public const MAX_INITIATES_PER_WINDOW = 10;
 
     public static function isBlocked(int $identifierFailures, int $ipFailures): bool
     {
         return $identifierFailures >= self::MAX_PER_IDENTIFIER
             || $ipFailures >= self::MAX_PER_IP;
+    }
+
+    /**
+     * True when $times already holds $max or more entries inside the window.
+     * Shared by the login block and the payment-initiation throttle.
+     *
+     * @param list<int> $times
+     */
+    public static function overLimit(array $times, int $max, int $now): bool
+    {
+        return count(self::inWindow($times, $now)) >= $max;
     }
 
     /**

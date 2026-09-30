@@ -77,6 +77,32 @@ final class CarRepository
         return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
+    /**
+     * For every car held on $day, the latest return date among the bookings
+     * that hold it. Same source of truth as isAvailable()/getOccupiedDays(), so
+     * the listing badge can never contradict the booking form: if booking_days
+     * has today, the car is booked today.
+     *
+     * @return array<int, string> car_id => Y-m-d return date (max)
+     */
+    public function occupiedUntil(string $day): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT bd.car_id, MAX(b.return_date) AS until_date
+             FROM booking_days bd
+             JOIN bookings b ON b.id = bd.booking_id
+             WHERE bd.day = ?
+             GROUP BY bd.car_id'
+        );
+        $stmt->execute([$day]);
+
+        $out = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $out[(int) $row['car_id']] = (string) $row['until_date'];
+        }
+        return $out;
+    }
+
     /** @param array<string, mixed> $data */
     public function create(array $data): int
     {

@@ -60,7 +60,7 @@ Seeds 6 users (1 owner, 2 staff, 3 clients), 7 Mercedes-Benz cars, 5 bookings,
 php phpunit.phar
 ```
 
-Expect `OK (194 tests, 1005 assertions)`. Integration tests skip themselves
+Expect `OK (199 tests, 1032 assertions)`. Integration tests skip themselves
 when MySQL is not reachable.
 
 Then open `http://localhost/bidii-benz/public/` and sign in with a seed

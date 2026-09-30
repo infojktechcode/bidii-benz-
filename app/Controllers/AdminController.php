@@ -13,6 +13,7 @@ use App\Core\Input;
 use App\Core\Log;
 use App\Core\Session;
 use App\Core\View;
+use App\Repositories\AuditRepository;
 use App\Repositories\BookingRepository;
 use App\Repositories\CarRepository;
 use App\Repositories\PaymentRepository;
@@ -27,9 +28,10 @@ use PDO;
 /**
  * Staff/owner back office.
  *
- * Every route that reaches this controller is guarded 'staff' in app/routes.php
- * (owner satisfies the staff check). Every POST is CSRF-validated. Frontend
- * visibility of these links is never the access control.
+ * Every route that reaches this controller is guarded in app/routes.php:
+ * 'staff' for the back office generally (owner satisfies the staff check) and
+ * 'owner' for the money-moving refund action. Every POST is CSRF-validated.
+ * Frontend visibility of these links is never the access control.
  */
 final class AdminController
 {
@@ -42,6 +44,7 @@ final class AdminController
     private PaymentService $paymentService;
     private PhotoStorage $photos;
     private UserRepository $users;
+    private AuditRepository $auditLogs;
 
     public function __construct()
     {
@@ -51,6 +54,7 @@ final class AdminController
         $this->bookings = new BookingRepository($this->pdo);
         $this->payments = new PaymentRepository($this->pdo);
         $this->users = new UserRepository($this->pdo);
+        $this->auditLogs = new AuditRepository($this->pdo);
         $this->bookingService = new BookingService($this->bookings, $this->cars, $this->payments);
         $this->paymentService = new PaymentService($this->payments, $this->bookings, $this->config);
         $this->photos = new PhotoStorage(
@@ -424,6 +428,52 @@ final class AdminController
             Session::flash('success', 'Payment refunded.');
         }
         redirect('/admin/payments');
+    }
+
+    // --- Audit trail ----------------------------------------------------------
+
+    /**
+     * Read-only audit viewer: newest first, filterable by action and actor,
+     * 50 rows per page. The route guard is 'staff' like the rest of the office.
+     */
+    public function auditLog(array $params = []): void
+    {
+        $action = null;
+        if (!empty($_GET['action']) && is_string($_GET['action'])) {
+            $candidate = substr($_GET['action'], 0, 60);
+            if (preg_match('/^[A-Za-z0-9._-]+$/', $candidate) === 1) {
+                $action = $candidate;
+            }
+        }
+
+        $userId = null;
+        if (!empty($_GET['user']) && is_string($_GET['user']) && ctype_digit($_GET['user'])) {
+            $candidate = (int) $_GET['user'];
+            if ($candidate > 0) {
+                $userId = $candidate;
+            }
+        }
+
+        $page = 1;
+        if (!empty($_GET['page']) && is_string($_GET['page']) && ctype_digit($_GET['page'])) {
+            $page = max(1, (int) $_GET['page']);
+        }
+
+        $total = $this->auditLogs->count($action, $userId);
+        $pages = max(1, (int) ceil($total / AuditRepository::PER_PAGE));
+        $page = min($page, $pages);
+
+        View::render('admin/audit', [
+            'title' => 'Audit trail — Bidii Benz Rentals',
+            'entries' => $this->auditLogs->page($page, $action, $userId),
+            'actions' => $this->auditLogs->distinctActions(),
+            'actors' => $this->auditLogs->distinctActors(),
+            'filterAction' => $action,
+            'filterUser' => $userId,
+            'page' => $page,
+            'pages' => $pages,
+            'total' => $total,
+        ]);
     }
 
     // --- Helpers -------------------------------------------------------------

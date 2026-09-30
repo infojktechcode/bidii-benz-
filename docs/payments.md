@@ -46,7 +46,12 @@ client opens /payment/{bookingId}
   → redirect to the booking confirmation page
 ```
 
-Office side: `/admin/payments` → confirm (receipt required, unique) or refund.
+Office side: `/admin/payments` → confirm (receipt required, unique) or refund
+(refund is **owner only** — the route refuses staff with 403).
+
+**Throttle:** a session may attempt initiation **10 times per 900 s**; the
+eleventh inside the window is refused with **429** before anything is written
+(never counts against bookings — validation failures are counted too).
 
 ## Callbacks (`POST /payment/callback`)
 
@@ -63,8 +68,9 @@ Machine caller — no session, no CSRF. Authenticated by the
 ## Confirmation and refunds
 
 - `POST /admin/payments/{id}/refund` requires a `confirmed` payment (a pending
-  or already-refunded one is refused). Refund sets status `refunded` and is
-  audited with the reason the staff typed.
+  or already-refunded one is refused), an **owner** session (staff → 403 at the
+  route guard) and CSRF. Refund sets status `refunded` and is audited with the
+  reason the office typed.
 - Staff confirmation records `confirmed_by` = the signed-in staff user, so the
   audit trail shows exactly who turned a cash record into money received.
 - `payments.mpesa_receipt` is UNIQUE: the same receipt can never be applied
@@ -73,7 +79,7 @@ Machine caller — no session, no CSRF. Authenticated by the
 ## Audited actions
 
 `payment.initiate` (client), `payment.confirm` (staff), `payment.refund`
-(staff). No password, token or `MPESA_*` value ever reaches the audit table —
+(owner). No password, token or `MPESA_*` value ever reaches the audit table —
 it has no column that could hold one.
 
 ## Known limitations
@@ -82,5 +88,3 @@ it has no column that could hold one.
   refuses rather than pretending. Mock mode covers development and demos.
 - There is no standalone client "payment history" page; a client sees all of a
   booking's payments on the booking detail page.
-- Refunds are available to `staff` (owner outranks staff); restricting them to
-  `owner` only is an open product decision.

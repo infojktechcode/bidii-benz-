@@ -43,8 +43,9 @@ before confirming a booking by phone. Client details are personal data
 - **Confirm** a `pending` cash/bank payment by entering the M-Pesa receipt or
   office reference (receipts are unique — the same one cannot be used twice).
   Confirmation is attributed to you.
-- **Refund** a `confirmed` payment with a reason; the refund is audited.
-  Refunds are currently available to staff as well as the owner.
+- **Refund** a `confirmed` payment with a reason — **owner only**. Staff can
+  confirm payments but the refund route refuses them (403); the owner sees the
+  refund control, staff see a note instead. Every refund is audited.
 
 ## Vehicles — `/admin/vehicles`
 
@@ -64,8 +65,21 @@ are rejected with a message):
 - revenue by client,
 - outstanding balances.
 
-Reports are keyed on when a booking/payment was **created**, not when the
-hire happened.
+Reports are keyed on when a booking/payment was **created**, not when the hire
+happened.
+
+## Audit trail — `/admin/audit`
+
+Every privileged action in the office lands here: who did what, to which
+entity, from which IP, when. Newest first, **50 rows per page**.
+
+- Filter by **action** (e.g. `payment.refund`, `booking.complete`) and by
+  **actor** (any user who has ever written an audit row).
+- Clients never reach this page (403); anonymous visitors are sent to login.
+- The table is append-only through the app: nothing in the UI can edit or
+  delete a row.
+
+Use it to answer "who changed this booking/payment, and when?"
 
 ## Things the system will refuse (by design)
 
@@ -75,5 +89,6 @@ hire happened.
   and owner may also cancel an `active` hire).
 - Confirming a payment that is not pending; refunding one that is not
   confirmed.
+- A **staff** account attempting a refund (owner-only route).
 - Opening another client's booking as a client (403) — staff can open any.
 - Mock M-Pesa collections while the app runs with `APP_ENV=production`.

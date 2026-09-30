@@ -72,6 +72,7 @@ php scripts/migrate.php status   # applied / pending
 php scripts/seed.php --force     # reseed synthetic demo data
 php phpunit.phar                 # full test suite
 php phpunit.phar --filter Name   # one test/class
+php scripts/http-smoke.php       # live HTTP end-to-end checks (Apache up)
 ```
 
 ## Behaviour worth knowing
@@ -80,6 +81,8 @@ php phpunit.phar --filter Name   # one test/class
   can never claim the same vehicle-day, even under concurrent requests.
 - Cancelling frees the vehicle's days immediately; completed hires keep their
   days as history.
+- The fleet page badges each vehicle's availability from `booking_days` — the
+  same ledger the booking form refuses a taken date against.
 - Reports are keyed on `bookings.created_at` / `payments.created_at`.
 - Statuses: `pending_payment, confirmed, active, completed, cancelled`
   (`no_show` is reserved in the schema but has no workflow yet).

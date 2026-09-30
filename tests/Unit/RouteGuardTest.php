@@ -125,10 +125,13 @@ final class RouteGuardTest extends TestCase
         );
         self::assertNotEmpty($admin, 'admin routes must exist');
         foreach ($admin as $route) {
-            self::assertSame(
-                'staff',
+            // 'staff' is the office baseline (owner satisfies it). A route may
+            // demand 'owner' outright for money-moving actions (refunds); it
+            // must never fall back to a weaker guard or none.
+            self::assertContains(
                 $route['guard'],
-                $route['method'] . ' ' . $route['pattern'] . ' must require the staff guard'
+                ['staff', 'owner'],
+                $route['method'] . ' ' . $route['pattern'] . ' must require the staff guard (owner allowed for owner-only actions)'
             );
         }
     }

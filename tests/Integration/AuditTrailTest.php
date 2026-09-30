@@ -8,6 +8,7 @@ use App\Core\Audit;
 use App\Core\Config;
 use App\Core\Database;
 use App\Core\Session;
+use App\Repositories\AuditRepository;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -143,6 +144,26 @@ final class AuditTrailTest extends TestCase
                 'audit_logs must never gain a credential column'
             );
         }
+    }
+
+    public function testTheViewerReadRowsWithTheirActorJoinedIn(): void
+    {
+        $repo = new AuditRepository(self::$pdo);
+        Audit::log(self::$actorUserId, 'staff', self::ACTION . '.view', 'bookings', 7, 'viewer-check', '127.0.0.1');
+
+        $rows = $repo->page(1, self::ACTION . '.view');
+        self::assertCount(1, $rows, 'the filtered page must return the row just written');
+        self::assertSame('viewer-check', (string) $rows[0]['detail']);
+        self::assertSame(self::$actorUserId, (int) $rows[0]['user_id']);
+        self::assertArrayHasKey('full_name', $rows[0], 'the client-profile join is always present');
+        self::assertNotEmpty((string) $rows[0]['email'], 'the actor email is joined in for display');
+
+        self::assertSame(1, $repo->count(self::ACTION . '.view'));
+        self::assertSame(0, $repo->count(self::ACTION . '.view', 99999999), 'an actor filter that matches nothing returns zero');
+        self::assertContains(self::ACTION . '.view', $repo->distinctActions());
+
+        $actorIds = array_column($repo->distinctActors(), 'id');
+        self::assertContains(self::$actorUserId, $actorIds, 'the writer appears in the actor dropdown');
     }
 
     public function testFailedLoginAuditsCarryNoPasswordMaterial(): void

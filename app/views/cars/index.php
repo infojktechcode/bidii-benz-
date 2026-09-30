@@ -1,9 +1,11 @@
 <?php
 /** @var string $title */
 /** @var list<array<string, mixed>> $cars */
+/** @var array<int, string> $availability car_id => latest return date held today */
 use App\Core\View;
 
 $cars = $cars ?? [];
+$availability = $availability ?? [];
 require dirname(__DIR__) . '/layout/header.php';
 ?>
 <section>
@@ -37,6 +39,14 @@ require dirname(__DIR__) . '/layout/header.php';
               KES <?= View::e(number_format((float) $car['daily_price'], 0)) ?>
               <span>/ day</span>
             </p>
+            <?php $until = $availability[(int) $car['id']] ?? null; ?>
+            <?php if ($until !== null): ?>
+              <p><span class="badge badge-pending-payment">
+                Booked until <?= View::e($until > date('Y-m-d') ? date('j M', strtotime($until)) : 'today') ?>
+              </span></p>
+            <?php else: ?>
+              <p><span class="badge badge-confirmed">Available</span></p>
+            <?php endif; ?>
             <a class="btn" href="<?= View::e(url('/cars/' . (int) $car['id'])) ?>">View details</a>
           </div>
         </article>

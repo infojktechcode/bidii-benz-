@@ -11,6 +11,17 @@
     var message = form.getAttribute('data-confirm');
     if (message && !window.confirm(message)) {
       event.preventDefault();
+      return;
+    }
+    // File uploads POST without any page activity for seconds; give feedback
+    // so the button does not look dead. Page-based flow: a failed validation
+    // lands on a fresh page with the button restored.
+    if (form.querySelector('input[type="file"]')) {
+      var button = form.querySelector('button[type="submit"]:not([disabled])');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Working…';
+      }
     }
   });
 

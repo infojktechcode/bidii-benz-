@@ -41,9 +41,19 @@ if ($config->isProduction()) {
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 if ($config->isProduction() && !$isHttps) {
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    header('Location: https://' . $host . $_SERVER['REQUEST_URI'], true, 301);
-    exit;
+    // SEC-04: never echo the request Host header back into a redirect — a
+    // forged Host would otherwise make this an open-redirect / cache-poisoning
+    // vector. The canonical authority comes from the configured APP_URL; if
+    // that is unusable the redirect is skipped entirely (fail closed on the
+    // header, rather than trusting the attacker-supplied one).
+    $appUrl = (string) $config->get('app_url', '');
+    $host = parse_url($appUrl, PHP_URL_HOST);
+    if (is_string($host) && $host !== '') {
+        $port = parse_url($appUrl, PHP_URL_PORT);
+        $authority = $host . (is_int($port) && $port !== 443 ? ':' . $port : '');
+        header('Location: https://' . $authority . $_SERVER['REQUEST_URI'], true, 301);
+        exit;
+    }
 }
 
 // Error handling per environment

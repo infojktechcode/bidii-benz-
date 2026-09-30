@@ -22,6 +22,7 @@ $role = Guard::role();
 <script src="<?= View::e(View::url('/assets/js/app.js')) ?>" defer></script>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
   <div class="container">
     <a class="brand" href="<?= View::e(View::url('/')) ?>">BIDII BENZ <span>RENTALS</span></a>
@@ -46,7 +47,7 @@ $role = Guard::role();
     </nav>
   </div>
 </header>
-<main class="container">
+<main id="main-content" class="container">
 <?php if ($flashSuccess !== null && $flashSuccess !== ''): ?>
   <p class="alert alert-success" role="status"><?= View::e($flashSuccess) ?></p>
 <?php endif; ?>

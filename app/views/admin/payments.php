@@ -4,6 +4,7 @@
 /** @var string|null $filter */
 /** @var float $outstanding */
 use App\Core\Csrf;
+use App\Core\Guard;
 use App\Core\View;
 
 $payments = $payments ?? [];
@@ -63,7 +64,7 @@ $badge = static fn (string $s): string => $s === 'confirmed' ? 'confirmed'
                            maxlength="20" placeholder="Receipt no." required>
                     <button class="btn btn-small" type="submit">Confirm</button>
                   </form>
-                <?php elseif ($p['status'] === 'confirmed'): ?>
+                <?php elseif ($p['status'] === 'confirmed' && Guard::hasRole('owner')): ?>
                   <form method="post" action="<?= View::e(url('/admin/payments/' . (int) $p['id'] . '/refund')) ?>"
                         class="stacked-form" data-confirm="Refund this payment?">
                     <?= Csrf::field('admin_payment_refund') ?>
@@ -72,6 +73,8 @@ $badge = static fn (string $s): string => $s === 'confirmed' ? 'confirmed'
                            maxlength="255" placeholder="Reason (optional)">
                     <button class="btn btn-small btn-secondary" type="submit">Refund</button>
                   </form>
+                <?php elseif ($p['status'] === 'confirmed'): ?>
+                  <span class="muted">Refund: owner only</span>
                 <?php else: ?>
                   <span class="muted">—</span>
                 <?php endif; ?>

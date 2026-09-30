@@ -56,8 +56,10 @@ $router->get('/admin/clients', [\App\Controllers\AdminController::class, 'client
 $router->get('/admin/clients/{id}', [\App\Controllers\AdminController::class, 'clientDetail'], 'staff');
 $router->get('/admin/payments', [\App\Controllers\AdminController::class, 'payments'], 'staff');
 $router->post('/admin/payments/{id}/confirm', [\App\Controllers\AdminController::class, 'confirmPayment'], 'staff');
-$router->post('/admin/payments/{id}/refund', [\App\Controllers\AdminController::class, 'refundPayment'], 'staff');
+$router->post('/admin/payments/{id}/refund', [\App\Controllers\AdminController::class, 'refundPayment'], 'owner');
 $router->get('/admin/reports', [\App\Controllers\AdminController::class, 'reports'], 'staff');
+// Read-only audit viewer. Refunds are money-moving: owner-only (see above).
+$router->get('/admin/audit', [\App\Controllers\AdminController::class, 'auditLog'], 'staff');
 
 $router->setNotFound(static function (): void {
     http_response_code(404);

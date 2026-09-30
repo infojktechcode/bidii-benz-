@@ -12,7 +12,9 @@ ID and phone identify the hire at hand-over; read the
 ## 2. Browse the fleet — `/cars`
 
 Every Mercedes-Benz with its photo, daily price, seats, transmission, fuel and
-availability. Open a vehicle for the full description.
+an **availability badge** — green "Available" when nobody holds it today, or
+"Booked until <date>" straight from the booking ledger. Open a vehicle for the
+full description and the day-by-day occupancy calendar.
 
 ## 3. Book — `/cars/{id}/book`
 

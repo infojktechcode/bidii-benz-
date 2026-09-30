@@ -7,6 +7,7 @@ hiding of a link is never access control.
 - **login** — any signed-in user
 - **client** — role `client` (a booking must belong to the caller)
 - **staff** — role `staff` or `owner` (`Guard::atLeast('staff')`)
+- **owner** — role `owner` only (money-moving actions)
 - **(CSRF)** — every POST also requires a valid `_csrf` token
 - **(secret)** — machine caller authenticated by shared secret
 
@@ -55,8 +56,9 @@ hiding of a link is never access control.
 | GET | `/admin/clients/{id}` | **Client profile + their bookings and payments** |
 | GET | `/admin/payments` | Payment list with status filter |
 | POST | `/admin/payments/{id}/confirm` | Manually confirm a cash/bank payment |
-| POST | `/admin/payments/{id}/refund` | Refund a confirmed payment |
+| POST | `/admin/payments/{id}/refund` | Refund a confirmed payment **(owner only)** |
 | GET | `/admin/reports` | Date-ranged reports (staff reach; owner dashboards) |
+| GET | `/admin/audit` | Audit trail viewer (filter by action/actor, 50 per page) |
 
 ## Errors
 

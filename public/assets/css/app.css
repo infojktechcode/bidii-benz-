@@ -39,6 +39,18 @@ main.container { padding: 2rem 0 3rem; min-height: 60vh; }
 .site-footer a { color: var(--muted); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* Skip link: first tab stop, invisible until focused */
+.skip-link {
+  position: absolute; left: -9999px; top: 0;
+  background: var(--accent); color: #fff; padding: .6rem 1rem;
+  border-radius: 0 0 var(--radius) 0; font-weight: 600; z-index: 100;
+}
+.skip-link:focus { left: 0; }
+
+/* Pagination row (audit viewer) */
+.pager { display: flex; align-items: center; gap: .75rem; margin-top: 1rem; font-size: .9rem; }
+.pager a { color: var(--accent-hover); }
+
 /* Alerts (flash messages) */
 .alert { padding: .75rem 1rem; border-radius: var(--radius); margin: 1rem 0; font-size: .95rem; }
 .alert-error { background: #2a1216; border: 1px solid var(--accent); color: #ffb3c2; }
@@ -172,6 +184,20 @@ input:focus-visible { border-color: var(--accent); }
 @media print {
   .print-sheet .btn-row, .print-sheet a.btn { display: none; }
 }
+
+/* --- Phase 8: tablet breakpoint + feedback --- */
+@media (max-width: 1024px) {
+  nav a { margin-left: .8rem; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .page-head { gap: .75rem; }
+}
+@media (max-width: 900px) {
+  /* Tablet portrait: the two-column detail and stat rows get cramped sooner
+     than the 640px phone breakpoint. */
+  .detail-layout { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+}
+.btn[disabled] { opacity: .65; cursor: progress; }
 
 /* --- Phase 6: reports, return workflow, payment status --- */
 input[type="datetime-local"] {

@@ -30,6 +30,7 @@ final class CarController
         View::render('cars/index', [
             'title' => 'Our Fleet — Bidii Benz Rentals',
             'cars' => $cars,
+            'availability' => $this->cars->occupiedUntil(date('Y-m-d')),
         ]);
     }
 
