@@ -187,6 +187,16 @@ final class BookingRepository
         }
     }
 
+    /**
+     * Status transition. Cancelling also frees the occupied days, so the header
+     * update and the day deletion are applied inside ONE transaction: a failure
+     * to free the days must never leave a `cancelled` booking still blocking the
+     * vehicle (and must never leave a completed/confirmed status applied while
+     * its days are half-deleted).
+     *
+     * If a caller already has a transaction open, its own boundary is used so
+     * the statements still commit or roll back together with that work.
+     */
     public function updateStatus(int $bookingId, string $status, ?int $actorId = null, ?string $cancelledAt = null): void
     {
         $fields = ['status = ?'];
@@ -200,12 +210,28 @@ final class BookingRepository
             $params[] = date('Y-m-d H:i:s');
         }
         $params[] = $bookingId;
-        $stmt = $this->pdo->prepare('UPDATE bookings SET ' . implode(', ', $fields) . ' WHERE id = ?');
-        $stmt->execute($params);
 
-        // If cancelled, free the booking_days
-        if ($status === 'cancelled') {
-            $this->pdo->prepare('DELETE FROM booking_days WHERE booking_id = ?')->execute([$bookingId]);
+        $ownTransaction = !$this->pdo->inTransaction();
+        if ($ownTransaction) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            $stmt = $this->pdo->prepare('UPDATE bookings SET ' . implode(', ', $fields) . ' WHERE id = ?');
+            $stmt->execute($params);
+
+            // If cancelled, free the booking_days
+            if ($status === 'cancelled') {
+                $this->pdo->prepare('DELETE FROM booking_days WHERE booking_id = ?')->execute([$bookingId]);
+            }
+
+            if ($ownTransaction) {
+                $this->pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($ownTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
         }
     }
 

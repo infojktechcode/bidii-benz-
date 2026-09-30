@@ -115,10 +115,21 @@ Verified evidence (2026-09-29):
 ERROR 1062 (23000): Duplicate entry '1-2026-10-06' for key 'PRIMARY'
 ```
 
-**Concurrency contract (Phase 5):** the booking service MUST insert the
-`bookings` header and all `booking_days` rows inside ONE transaction and roll
-back on any failure. (Proven necessary: without a transaction the header row
-persists even when the day insert fails.) Availability is then a simple query:
+**Concurrency contract (Phase 5) — implemented and verified:** the booking
+service inserts the `bookings` header and all `booking_days` rows inside ONE
+transaction and rolls back on any failure
+(`BookingRepository::createWithDays()`, `app/Repositories/BookingRepository.php`).
+Proof that a mid-transaction duplicate-key failure removes the header *and* the
+days already written: `tests/Integration/BookingConcurrencyTest.php`.
+
+Availability is the logical query below. The implementation deliberately runs it
+as two guards, both inside `BookingService::createBooking()`:
+
+1. `c.status = 'active' AND c.deleted_at IS NULL` — enforced by
+   `CarRepository::findById()` (which filters `deleted_at`) plus an explicit
+   status check; the public fleet list uses the same predicates via
+   `CarRepository::findActive()`.
+2. the `NOT EXISTS` day-overlap half — `CarRepository::isAvailable()`.
 
 ```sql
 SELECT c.id FROM cars c
@@ -131,7 +142,18 @@ WHERE c.status = 'active' AND c.deleted_at IS NULL
 ```
 
 `booking_days` rows are deleted (not kept) when a booking is cancelled, freeing
-the car. Booking history is preserved in `bookings`.
+the car. The status update and that deletion run inside ONE transaction
+(`BookingRepository::updateStatus()`), so a `cancelled` booking can never be
+left still occupying its days. Booking history is preserved in `bookings`.
+
+Verified evidence (2026-09-30):
+
+```
+forced duplicate key on a later day → bookings count unchanged,
+booking_days count unchanged            (header + earlier days rolled back)
+held row lock during cancellation      → status rolled back to pending_payment,
+                                         cancelled_at NULL, days still present
+```
 
 ### 2. Money
 `DECIMAL(12,2)` (amounts) / `DECIMAL(10,2)` (rates), `currency CHAR(3) = KES`.
