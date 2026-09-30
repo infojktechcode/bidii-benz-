@@ -40,7 +40,8 @@ Seed accounts (synthetic test data — never used in production):
 | [docs/routes.md](docs/routes.md) | Full URL map with the access guard on each route |
 | [docs/payments.md](docs/payments.md) | M-Pesa modes, mock collection, callbacks, partial payments, refunds |
 | [docs/security.md](docs/security.md) | Auth model, session, CSRF, headers, web-root hardening, audit trail |
-| [docs/testing.md](docs/testing.md) | Unit/integration suites, what skips when MySQL is down, HTTP checks |
+ | [docs/testing.md](docs/testing.md) | Unit/integration suites, what skips when MySQL is down, HTTP checks |
+ | [docs/requirements.md](docs/requirements.md) | Requirements → implementation traceability matrix |
 | [docs/staff-guide.md](docs/staff-guide.md) | Back-office handbook (staff/owner) |
 | [docs/client-guide.md](docs/client-guide.md) | What a client can do, step by step |
 | [docs/dfd.md](docs/dfd.md) | Data-flow diagram and data stores |

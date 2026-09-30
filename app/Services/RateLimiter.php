@@ -20,6 +20,8 @@ final class RateLimiter
     public const MAX_INITIATES_PER_WINDOW = 10;
     /** Password-change attempts allowed per session inside the window. */
     public const MAX_PASSWORD_CHANGES_PER_WINDOW = 5;
+    /** Registration attempts allowed per session inside the window. */
+    public const MAX_REGISTRATIONS_PER_WINDOW = 5;
 
     public static function isBlocked(int $identifierFailures, int $ipFailures): bool
     {

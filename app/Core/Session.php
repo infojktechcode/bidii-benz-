@@ -25,6 +25,11 @@ final class Session
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
+        // Explicitly pin the no-store cache policy for every response this
+        // session touches, instead of relying on the php.ini default
+        // (session.cache_limiter), which a host could silently override.
+        session_cache_limiter('nocache');
+
         session_name((string) $config->get('session.name', 'bidii_sess'));
         session_set_cookie_params([
             'lifetime' => 0,

@@ -4,6 +4,7 @@ $reason = $reason ?? 'payment';
 $messages = [
     'payment' => 'You have made too many payment attempts in a short period. Please wait a few minutes and try again.',
     'password' => 'You have made too many password-change attempts in a short period. Please wait a few minutes and try again.',
+    'registration' => 'You have made too many account-registration attempts in a short period. Please wait a few minutes and try again.',
 ];
 ?>
 <?php require dirname(__DIR__) . '/layout/header.php'; ?>

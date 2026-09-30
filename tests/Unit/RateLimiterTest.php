@@ -83,4 +83,20 @@ final class RateLimiterTest extends TestCase
             'stale attempts must not keep a client throttled after the window'
         );
     }
+
+    public function testRegistrationThrottleFiresAtTheConfiguredLimit(): void
+    {
+        $now = 10000;
+        $max = RateLimiter::MAX_REGISTRATIONS_PER_WINDOW;
+
+        $under = array_fill(0, $max - 1, $now - 10);
+        self::assertFalse(RateLimiter::overLimit($under, $max, $now));
+
+        $atLimit = array_fill(0, $max, $now - 10);
+        self::assertTrue(RateLimiter::overLimit($atLimit, $max, $now));
+
+        // Attempts that aged out of the 900s window stop counting.
+        $stale = array_fill(0, $max, $now - 901);
+        self::assertFalse(RateLimiter::overLimit($stale, $max, $now));
+    }
 }

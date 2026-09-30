@@ -43,6 +43,11 @@ request — not when the cookie expires.
 - Profile self-service (`POST /account/profile`, client-only): registration
   validation rules + phone uniqueness, persisted in one transaction and
   audited as `account.profile_updated` (field names only).
+- Registration (`POST /register`): CSRF-validated and throttled to **5
+  attempts per session per 900 s**
+  (`RateLimiter::MAX_REGISTRATIONS_PER_WINDOW` — the 6th → **429** before any
+  validation runs or any row is written). Session-scoped, the same accepted
+  trade-off as the password cap.
 
 ## Session
 
@@ -75,6 +80,10 @@ Set on every response by `public/index.php`:
   configured `APP_URL`, **never** from the request `Host` header (a forged Host
   cannot turn the redirect into an open redirect; if `APP_URL` is unusable the
   redirect is skipped rather than trusted from the request)
+- `Cache-Control: no-store, no-cache, must-revalidate` pinned in
+  `Session::start()` via `session_cache_limiter('nocache')`, so authenticated
+  pages are never stored by browsers or intermediaries regardless of the
+  host's `php.ini` (`session.cache_limiter` default)
 
 Error pages show message + file/line only when `APP_ENV=development` **and**
 `APP_DEBUG=1`, decided from configuration — never from the raw process
@@ -153,3 +162,8 @@ Resolved in Phase 10: the production CSP no longer allows `style-src
 `app.js` via `data-*` attributes); a profile phone update that collides with a
 unique key the pre-check cannot see (concurrent update / soft-deleted holder)
 now returns a field error instead of an uncaught 500.
+
+Resolved in Phase 11: the cache policy no longer depends on the php.ini
+default (`session_cache_limiter('nocache')` pinned in code — SEC-17), and
+`POST /register` now carries the same session-scoped attempt cap as password
+change (SEC-18).

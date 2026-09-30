@@ -823,6 +823,43 @@ $st->execute([$accUserId]);
 check(password_verify('AccountNew123!', (string) $st->fetchColumn()),
     'no throttled attempt changed the stored hash');
 
+// ================================================ Phase 11: registration cap
+echo '-- Phase 11: registration throttle and cache policy --' . PHP_EOL;
+
+// Same-session registration attempts: 5 handled, the 6th refused with 429.
+// Payloads are invalid on purpose — the cap must fire before any row is
+// written, so no throwaway users are created here.
+$reg = jar();
+$regToken = csrfAny(req($reg, 'GET', '/register')['body']);
+check($regToken !== null, 'the register form renders a CSRF token');
+$maxReg = RateLimiter::MAX_REGISTRATIONS_PER_WINDOW;
+$okAttempts = true;
+for ($i = 1; $i <= $maxReg; $i++) {
+    $r = req($reg, 'POST', '/register', ['_csrf' => $regToken]);
+    if ($r['code'] !== 302) {
+        $okAttempts = false;
+        break;
+    }
+}
+check($okAttempts, "the first {$maxReg} registration attempts inside the window are handled",
+    'stopped after ' . ($i - 1) . ', code ' . ($r['code'] ?? 'n/a'));
+$r = req($reg, 'POST', '/register', ['_csrf' => $regToken]);
+check($r['code'] === 429, 'the 6th registration attempt inside the window is refused with 429',
+    "code {$r['code']}");
+check(str_contains($r['body'], 'Too many attempts') && str_contains($r['body'], 'registration'),
+    'the 429 page explains the registration refusal');
+
+// Authenticated responses must carry an explicit no-store cache policy
+// (pinned in Session::start, not left to the php.ini default).
+$cacheJar = jar();
+check(login($cacheJar, 'client1@bidii.test', 'ClientPass123!'),
+    'client1 signs in for the cache-policy check');
+$r = req($cacheJar, 'GET', '/account');
+check($r['code'] === 200, 'the authenticated account page renders for the cache check',
+    "code {$r['code']}");
+check(str_contains($r['head'], 'Cache-Control:') && str_contains($r['head'], 'no-store'),
+    'authenticated responses carry Cache-Control: no-store', $r['head']);
+
 // ================================================================== cleanup
 $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$staffUserId]);
 $pdo->prepare('DELETE FROM audit_logs WHERE detail LIKE ?')->execute(['%' . $email . '%']);

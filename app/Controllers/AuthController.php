@@ -14,6 +14,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
+use App\Services\RateLimiter;
 use PDO;
 
 /**
@@ -112,6 +113,22 @@ final class AuthController
         if (Guard::check()) {
             redirect('/');
         }
+
+        // Count every attempt (invalid payloads included) after CSRF and
+        // before any validation or database work — a blocked request writes
+        // no user row and verifies nothing.
+        $now = time();
+        $times = array_values(array_filter(
+            (array) Session::get('register_times', []),
+            static fn (mixed $t): bool => is_int($t)
+        ));
+        if (RateLimiter::overLimit($times, RateLimiter::MAX_REGISTRATIONS_PER_WINDOW, $now)) {
+            http_response_code(429);
+            View::render('errors/429', ['reason' => 'registration'], 429);
+            exit;
+        }
+        $times[] = $now;
+        Session::set('register_times', $times);
 
         $input = Input::fromRequest();
         $fullName = $input->string('full_name', 120);

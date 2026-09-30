@@ -5,10 +5,10 @@
 ```
 php phpunit.phar                 # everything
 php phpunit.phar --filter Name    # by class/method name
-php phpunit.phar --testsuite Unit # see phpunit.xml
+php phpunit.phar --testsuite unit # suites (lowercase): unit | integration
 ```
 
-Current baseline: **`OK (214 tests, 1123 assertions)`** (PHP 8.3.33,
+Current baseline: **`OK (215 tests, 1127 assertions)`** (PHP 8.3.33,
 PHPUnit 10.5.65, bundled `phpunit.phar` — no Composer install needed).
 
 Integration tests open the real database and **skip themselves** with
@@ -60,7 +60,7 @@ The suites cannot see Apache, so run the committed smoke script against
 php scripts/http-smoke.php
 ```
 
-**140 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
+**147 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
 non-zero on any failure:
 
 - hidden paths return **403** (`.env`, `.env.example`, `.git`, `docs/`,
@@ -87,6 +87,9 @@ non-zero on any failure:
 - Phase 10: CSP safety — booking history cancel uses `data-confirm`, the
   confirmation page prints via `data-print`, neither page ships an inline
   `onclick`
+- Phase 11: registration cap — first 5 attempts in the window handled, 6th →
+  **429** (no row written), and authenticated responses carry
+  `Cache-Control: no-store`
 
 ## Updating expectations
 

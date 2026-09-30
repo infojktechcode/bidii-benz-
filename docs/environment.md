@@ -46,7 +46,7 @@ is HTTPS. The session name is fixed (`bidii_sess`).
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `MPESA_ENV` | `mock` | `mock` = local auto-confirm, never contacts Safaricom. `sandbox` / `live` = refused until real STK push is integrated (Phase 8 scope). **Mock is additionally refused when `APP_ENV=production`.** |
+| `MPESA_ENV` | `mock` | `mock` = local auto-confirm, never contacts Safaricom. `sandbox` / `live` = refused until real STK push is integrated (external — see [deploy.md](deploy.md)). **Mock is additionally refused when `APP_ENV=production`.** |
 | `MPESA_CONSUMER_KEY` | *(empty)* | Daraja consumer key. |
 | `MPESA_CONSUMER_SECRET` | *(empty)* | Daraja consumer secret. |
 | `MPESA_SHORTCODE` | *(empty)* | Paybill/shortcode. |
