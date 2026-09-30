@@ -38,6 +38,12 @@ $router->post('/payment/{bookingId}/initiate', [\App\Controllers\PaymentControll
 // PaymentService::handleCallback(); rejected outright while MPESA_ENV=mock.
 $router->post('/payment/callback', [\App\Controllers\PaymentController::class, 'callback']);
 
+// Account self-service: profile edits are client-only; the password change
+// is available to every authenticated role (current password + throttle).
+$router->get('/account', [\App\Controllers\AccountController::class, 'show'], 'login');
+$router->post('/account/profile', [\App\Controllers\AccountController::class, 'updateProfile'], 'client');
+$router->post('/account/password', [\App\Controllers\AccountController::class, 'changePassword'], 'login');
+
 // Admin (staff/owner)
 $router->get('/admin', [\App\Controllers\AdminController::class, 'dashboard'], 'staff');
 $router->get('/admin/vehicles', [\App\Controllers\AdminController::class, 'vehicles'], 'staff');

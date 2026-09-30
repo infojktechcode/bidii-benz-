@@ -81,6 +81,15 @@ entity, from which IP, when. Newest first, **50 rows per page**.
 
 Use it to answer "who changed this booking/payment, and when?"
 
+## Your account — `/account`
+
+Available to **every** role from the header's Account link:
+
+- **Change password** — current password required, throttled (5 attempts per
+  15 minutes), audited, and you stay signed in afterwards.
+- Staff and owner accounts have no client profile section — only clients see
+  the profile form (name/phone/city).
+
 ## Things the system will refuse (by design)
 
 - Completing or starting a hire that is not in the right status.

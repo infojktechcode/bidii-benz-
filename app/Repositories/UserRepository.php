@@ -56,6 +56,59 @@ final class UserRepository
         return $stmt->fetchColumn() !== false;
     }
 
+    /** @return array<string, mixed>|null */
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1'
+        );
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        return $row === false ? null : $row;
+    }
+
+    /**
+     * The signed-in client's own profile fields for the account page
+     * (name/city live on clients, phone on users).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findProfileByUserId(int $userId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT c.full_name, c.city, u.phone
+             FROM clients c
+             JOIN users u ON u.id = c.user_id
+             WHERE c.user_id = ? LIMIT 1'
+        );
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch();
+        return $row === false ? null : $row;
+    }
+
+    /**
+     * Update the client's own contact details: phone on users, name/city on
+     * clients, inside one transaction. Only rows owned by $userId are touched.
+     */
+    public function updateProfile(int $userId, string $fullName, string $phone, ?string $city): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('UPDATE users SET phone = ? WHERE id = ?');
+            $stmt->execute([$phone, $userId]);
+            $stmt = $this->pdo->prepare(
+                'UPDATE clients SET full_name = ?, city = ? WHERE user_id = ?'
+            );
+            $stmt->execute([$fullName, $city, $userId]);
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
     public function countClients(): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM clients')->fetchColumn();

@@ -35,6 +35,7 @@ $role = Guard::role();
         <?php else: ?>
           <a href="<?= View::e(View::url('/bookings')) ?>">My bookings</a>
         <?php endif; ?>
+        <a href="<?= View::e(View::url('/account')) ?>">Account</a>
         <span class="nav-user"><?= View::e((string) Session::get('user_name', '')) ?></span>
         <form method="post" action="<?= View::e(View::url('/logout')) ?>" class="nav-inline">
           <?= Csrf::field('logout') ?>

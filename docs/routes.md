@@ -36,6 +36,9 @@ hiding of a link is never access control.
 | POST | `/payment/{bookingId}/initiate` | Start a collection (mock STK / cash / bank) |
 | POST | `/payment/callback` | M-Pesa result callback **(secret, no session/CSRF)** |
 | POST | `/logout` | Sign out |
+| GET | `/account` | Account self-service: profile + password change |
+| POST | `/account/profile` | Update own name/phone/city **(client only)** |
+| POST | `/account/password` | Change own password (current password required) |
 
 ## Admin — staff/owner (login + CSRF)
 

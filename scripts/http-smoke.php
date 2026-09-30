@@ -9,8 +9,9 @@ declare(strict_types=1);
  *
  * Exercises the built application over real HTTP end to end: hardening
  * (SEC-01/05/10), authz/IDOR, the booking lifecycle with CSRF, reports, the
- * payment audit, the staff client directory, and the Phase 8 additions (audit
- * viewer, availability badges, owner-only refunds, initiation throttle).
+ * payment audit, the staff client directory, the Phase 8 additions (audit
+ * viewer, availability badges, owner-only refunds, initiation throttle) and
+ * the Phase 9 account self-service (profile edit, password change, throttle).
  *
  * Read-only against seeded data: every row it creates is cleaned up at the
  * end. Exits non-zero on the first failing check count > 0.
@@ -641,12 +642,190 @@ if ($bookingT !== null) {
     check((int) $st->fetchColumn() === 0, 'no payment row was written by any throttled attempt');
 }
 
+// ================================================ Phase 9: account self-service
+echo '-- Phase 9: account self-service --' . PHP_EOL;
+
+// Anonymous visitors are pushed to sign in.
+$accAnon = jar();
+$r = req($accAnon, 'GET', '/account');
+check($r['code'] === 302 && str_contains((string) $r['location'], '/login'),
+    'anonymous /account redirects to sign in', "code {$r['code']} loc {$r['location']}");
+
+// Throwaway client, created directly like the staff throwaway above.
+$accEmail = 'smoke-account-' . bin2hex(random_bytes(3)) . '@example.test';
+$accPhone = '07' . random_int(10000000, 99999999);
+$accHash = password_hash('AccountOld123!', PASSWORD_DEFAULT);
+$pdo->prepare("INSERT INTO users (role, email, phone, password_hash, status) VALUES ('client', ?, ?, ?, 'active')")
+    ->execute([$accEmail, $accPhone, $accHash]);
+$accUserId = (int) $pdo->lastInsertId();
+$pdo->prepare('INSERT INTO clients (user_id, full_name, id_number, city) VALUES (?, ?, ?, ?)')
+    ->execute([$accUserId, 'Smoke Account', (string) random_int(100000000, 999999999), 'Nairobi']);
+
+$acc = jar();
+check(login($acc, $accEmail, 'AccountOld123!'), 'throwaway client signs in for the account checks');
+$accPage = req($acc, 'GET', '/account');
+check($accPage['code'] === 200 && str_contains($accPage['body'], 'My account'),
+    'the account page renders', "code {$accPage['code']}");
+check(str_contains($accPage['body'], '/account/profile') && str_contains($accPage['body'], '/account/password'),
+    'both the profile and password forms are present');
+check(str_contains($accPage['body'], '/account">Account</a>'), 'the header links signed-in users to the account page');
+
+// Staff get the password section but never a client profile form.
+$r = req($s1, 'GET', '/account');
+check($r['code'] === 200 && !str_contains($r['body'], '/account/profile'),
+    'staff see no client profile form', "code {$r['code']}");
+$r = req($s1, 'POST', '/account/profile', [
+    'full_name' => 'Should Not Land',
+    'phone' => '0712345678',
+    'city' => 'Nope',
+    '_csrf' => 'staff-cannot-edit-a-profile',
+]);
+check($r['code'] === 403, 'staff are refused at the client-only profile route', "code {$r['code']}");
+
+// Anonymous POST is pushed to sign in before any work happens.
+$r = req($accAnon, 'POST', '/account/password', [
+    'current_password' => 'x',
+    'password' => 'y12345678',
+    'confirm_password' => 'y12345678',
+    '_csrf' => 'forged',
+]);
+check($r['code'] === 302 && str_contains((string) $r['location'], '/login'),
+    'anonymous password POST redirects to sign in', "code {$r['code']} loc {$r['location']}");
+
+// Profile edit: forged CSRF refused, then a valid edit persists and audits.
+$r = req($acc, 'POST', '/account/profile', [
+    'full_name' => 'Forged Entry',
+    'phone' => $accPhone,
+    'city' => 'Forged',
+    '_csrf' => 'forged-token',
+]);
+check($r['code'] === 403, 'a forged profile token is refused with 403', "code {$r['code']}");
+
+$token = csrfIn($accPage['body'], '/account/profile');
+check($token !== null, 'the profile form carries a CSRF token');
+$r = req($acc, 'POST', '/account/profile', [
+    'full_name' => 'Smoke Account Updated',
+    'phone' => $accPhone,
+    'city' => 'Thika',
+    '_csrf' => $token,
+]);
+check($r['code'] === 302, 'a valid profile update redirects (PRG)', "code {$r['code']}");
+$accPage = req($acc, 'GET', '/account');
+check(str_contains($accPage['body'], 'Smoke Account Updated') && str_contains($accPage['body'], 'Thika'),
+    'the updated profile reaches the page and the nav');
+$st = $pdo->prepare("SELECT COUNT(*) FROM audit_logs WHERE user_id = ? AND action = 'account.profile_updated'");
+$st->execute([$accUserId]);
+check((int) $st->fetchColumn() === 1, 'the profile update is audited');
+
+// Validation failure: refused, nothing written.
+$token = csrfIn($accPage['body'], '/account/profile');
+$r = req($acc, 'POST', '/account/profile', [
+    'full_name' => 'X',
+    'phone' => 'not-a-phone',
+    'city' => 'Thika',
+    '_csrf' => $token,
+]);
+check($r['code'] === 302, 'an invalid profile redirects back with errors', "code {$r['code']}");
+$accPage = req($acc, 'GET', '/account');
+check(str_contains($accPage['body'], 'field-error') && str_contains($accPage['body'], 'Smoke Account Updated'),
+    'the refusal is shown and the stored profile is unchanged');
+
+// Password change: wrong current refused (hash untouched), then success.
+$token = csrfIn($accPage['body'], '/account/password');
+$r = req($acc, 'POST', '/account/password', [
+    'current_password' => 'WrongOld999!',
+    'password' => 'AccountNew123!',
+    'confirm_password' => 'AccountNew123!',
+    '_csrf' => $token,
+]);
+check($r['code'] === 302, 'a wrong current password redirects back', "code {$r['code']}");
+$accPage = req($acc, 'GET', '/account');
+check(str_contains($accPage['body'], 'Current password is incorrect'),
+    'the refusal message reaches the screen');
+$st = $pdo->prepare('SELECT password_hash FROM users WHERE id = ?');
+$st->execute([$accUserId]);
+check(password_verify('AccountOld123!', (string) $st->fetchColumn()),
+    'the stored hash is untouched after the refusal');
+$st = $pdo->prepare("SELECT COUNT(*) FROM audit_logs WHERE user_id = ? AND action = 'account.password_change_failed'");
+$st->execute([$accUserId]);
+check((int) $st->fetchColumn() === 1, 'the failed attempt is audited');
+
+$token = csrfIn($accPage['body'], '/account/password');
+$r = req($acc, 'POST', '/account/password', [
+    'current_password' => 'AccountOld123!',
+    'password' => 'AccountNew123!',
+    'confirm_password' => 'AccountNew123!',
+    '_csrf' => $token,
+]);
+check($r['code'] === 302, 'the correct current password accepts the change', "code {$r['code']}");
+$st = $pdo->prepare('SELECT password_hash FROM users WHERE id = ?');
+$st->execute([$accUserId]);
+check(password_verify('AccountNew123!', (string) $st->fetchColumn()), 'the new password hash is stored');
+
+// login() only sees the 302 both ways, so prove each outcome by loading an
+// authenticated page in that session afterwards.
+$oldJar = jar();
+login($oldJar, $accEmail, 'AccountOld123!');
+$r = req($oldJar, 'GET', '/account');
+check($r['code'] === 302 && str_contains((string) $r['location'], '/login'),
+    'the old password no longer establishes a session', "code {$r['code']} loc {$r['location']}");
+$newJar = jar();
+login($newJar, $accEmail, 'AccountNew123!');
+$r = req($newJar, 'GET', '/account');
+check($r['code'] === 200 && str_contains($r['body'], 'My account'),
+    'the new password signs in', "code {$r['code']}");
+$st = $pdo->prepare("SELECT COUNT(*) FROM audit_logs WHERE user_id = ? AND action = 'account.password_changed'");
+$st->execute([$accUserId]);
+check((int) $st->fetchColumn() === 1, 'the password change is audited');
+
+// Throttle: the configured attempts are handled, the next is 429.
+$pwThr = jar();
+check(login($pwThr, $accEmail, 'AccountNew123!'), 'a fresh session signs in for the throttle check');
+$maxPw = RateLimiter::MAX_PASSWORD_CHANGES_PER_WINDOW;
+$i = 0;
+$r = ['code' => null];
+for (; $i < $maxPw; $i++) {
+    $page = req($pwThr, 'GET', '/account');
+    $token = csrfIn($page['body'], '/account/password');
+    $r = req($pwThr, 'POST', '/account/password', [
+        'current_password' => 'StillWrong111!',
+        'password' => 'Whatever12345!',
+        'confirm_password' => 'Whatever12345!',
+        '_csrf' => $token,
+    ]);
+    if ($r['code'] !== 302) {
+        break;
+    }
+}
+check($i === $maxPw, "the first {$maxPw} password attempts are handled",
+    "stopped after $i, code " . ($r['code'] ?? 'n/a'));
+$page = req($pwThr, 'GET', '/account');
+$token = csrfIn($page['body'], '/account/password');
+$r = req($pwThr, 'POST', '/account/password', [
+    'current_password' => 'StillWrong111!',
+    'password' => 'Whatever12345!',
+    'confirm_password' => 'Whatever12345!',
+    '_csrf' => $token,
+]);
+check($r['code'] === 429, 'attempt ' . ($maxPw + 1) . ' inside the window is refused with 429',
+    "code {$r['code']}");
+$st = $pdo->prepare('SELECT password_hash FROM users WHERE id = ?');
+$st->execute([$accUserId]);
+check(password_verify('AccountNew123!', (string) $st->fetchColumn()),
+    'no throttled attempt changed the stored hash');
+
 // ================================================================== cleanup
 $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$staffUserId]);
 $pdo->prepare('DELETE FROM audit_logs WHERE detail LIKE ?')->execute(['%' . $email . '%']);
 $pdo->prepare('DELETE FROM login_attempts WHERE identifier = ?')->execute([$email]);
 $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$staffUserId]);
 echo "[cleanup] removed throwaway staff account $email" . PHP_EOL;
+
+$pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$accUserId]);
+$pdo->prepare('DELETE FROM login_attempts WHERE identifier = ?')->execute([$accEmail]);
+$pdo->prepare('DELETE FROM clients WHERE user_id = ?')->execute([$accUserId]);
+$pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$accUserId]);
+echo "[cleanup] removed throwaway account $accEmail" . PHP_EOL;
 
 $ids = implode(',', array_map('intval', $created));
 if ($ids !== '') {

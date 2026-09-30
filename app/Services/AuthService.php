@@ -155,6 +155,91 @@ final class AuthService
         return ['ok' => true, 'user' => $user];
     }
 
+    /**
+     * Profile self-service validation: the same rules registration applies,
+     * minus the identifiers that cannot change here (email, ID number).
+     *
+     * @return array<string, string>
+     */
+    public static function validateProfile(string $fullName, string $phone, string $city): array
+    {
+        $errors = [];
+        if (mb_strlen($fullName) < 3 || mb_strlen($fullName) > 120) {
+            $errors['full_name'] = 'Enter your full name (3-120 characters).';
+        }
+        if (!preg_match('/^(?:0|\+254)(7|1)\d{8}$/', $phone)) {
+            $errors['phone'] = 'Enter a valid Kenyan mobile number (07XXXXXXXX or +2547XXXXXXXX).';
+        }
+        if (mb_strlen($city) > 80) {
+            $errors['city'] = 'City must be 80 characters or fewer.';
+        }
+        return $errors;
+    }
+
+    /**
+     * Client profile self-service: validate, enforce phone uniqueness, then
+     * persist phone (users) + name/city (clients) in one transaction.
+     *
+     * @return array{ok: bool, errors: array<string, string>}
+     */
+    public function updateProfile(int $userId, string $fullName, string $phone, ?string $city): array
+    {
+        $errors = self::validateProfile($fullName, $phone, $city ?? '');
+        if ($errors === []) {
+            $other = $this->users->findByPhone($phone);
+            if ($other !== null && (int) $other['id'] !== $userId) {
+                $errors['phone'] = 'That phone number is already in use.';
+            }
+        }
+        if ($errors !== []) {
+            return ['ok' => false, 'errors' => $errors];
+        }
+
+        $this->users->updateProfile($userId, $fullName, $phone, $city);
+        return ['ok' => true, 'errors' => []];
+    }
+
+    /**
+     * Change the signed-in user's password with current-password re-entry.
+     * Values never leave this method: callers receive field-level messages
+     * only, and nothing is logged or audited from here.
+     *
+     * @return array{ok: bool, errors: array<string, string>}
+     */
+    public function changePassword(int $userId, string $current, string $new, string $confirm): array
+    {
+        $errors = [];
+        if ($current === '') {
+            $errors['current_password'] = 'Enter your current password.';
+        }
+        if (strlen($new) < 8) {
+            $errors['password'] = 'Password must be at least 8 characters.';
+        } elseif (strlen($new) > 72) {
+            // bcrypt silently truncates at 72 bytes - reject rather than confuse.
+            $errors['password'] = 'Password must be 72 characters or fewer.';
+        }
+        if ($new !== $confirm) {
+            $errors['confirm_password'] = 'Passwords do not match.';
+        }
+        if ($new !== '' && !isset($errors['password']) && hash_equals($current, $new)) {
+            $errors['password'] = 'Choose a password different from your current one.';
+        }
+        if ($errors !== []) {
+            return ['ok' => false, 'errors' => $errors];
+        }
+
+        $user = $this->users->findById($userId);
+        if ($user === null) {
+            return ['ok' => false, 'errors' => ['current_password' => 'Account not found.']];
+        }
+        if (!password_verify($current, (string) $user['password_hash'])) {
+            return ['ok' => false, 'errors' => ['current_password' => 'Current password is incorrect.']];
+        }
+
+        $this->users->updatePasswordHash($userId, password_hash($new, PASSWORD_DEFAULT));
+        return ['ok' => true, 'errors' => []];
+    }
+
     private function rehash(int $userId, string $password): void
     {
         try {

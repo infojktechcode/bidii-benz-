@@ -84,6 +84,9 @@ php scripts/http-smoke.php       # live HTTP end-to-end checks (Apache up)
 - The fleet page badges each vehicle's availability from `booking_days` — the
   same ledger the booking form refuses a taken date against.
 - Reports are keyed on `bookings.created_at` / `payments.created_at`.
+- Account self-service at `/account`: clients edit their name/phone/city;
+  every role can change their password (current password required, 5 attempts
+  per 900 s, session id regenerated, both audited).
 - Statuses: `pending_payment, confirmed, active, completed, cancelled`
   (`no_show` is reserved in the schema but has no workflow yet).
 - Every privileged action is written to `audit_logs`.

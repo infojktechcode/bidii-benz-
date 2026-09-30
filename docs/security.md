@@ -33,12 +33,22 @@ request — not when the cookie expires.
 - Sign-in, sign-out, registration and failed logins are audited
   (`auth.login`, `auth.logout`, `auth.register`, `auth.login_failed`); failed
   logins store the identifier only — never the submitted password.
+- Password self-service (`POST /account/password`, every role): requires the
+  current password (bcrypt verify), is CSRF-validated and throttled to **5
+  attempts per session per 900 s**
+  (`RateLimiter::MAX_PASSWORD_CHANGES_PER_WINDOW` — the 6th → **429** before
+  anything is verified). Success regenerates the session id, rotates CSRF and
+  is audited (`account.password_changed`); refusals are audited as
+  `account.password_change_failed` with field names only — never values.
+- Profile self-service (`POST /account/profile`, client-only): registration
+  validation rules + phone uniqueness, persisted in one transaction and
+  audited as `account.profile_updated` (field names only).
 
 ## Session
 
 - Cookie: `HttpOnly`, `SameSite=Lax`, `Secure` on HTTPS, name `bidii_sess`.
 - Idle timeout 1800 s / absolute timeout 28800 s (configurable).
-- Session ID regenerated on login and privilege change.
+- Session ID regenerated on login, privilege change and password change.
 - All session reads go through `Session`/`Guard`; nothing trusts client input
   for identity.
 

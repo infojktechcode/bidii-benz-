@@ -38,7 +38,7 @@ Level-0 (context) view of Bidii Benz Rentals: who sends what, where it lands.
 
 | Process | Reads / writes |
 |---|---|
-| **Auth** | `users`, `login_attempts`, `audit_logs` (`auth.*`) |
+| **Auth** | `users`, `login_attempts`, `audit_logs` (`auth.*`, `account.*`) |
 | **Booking** | `cars`, `bookings`, `booking_days` (overlap proof via PK), `audit_logs` (`booking.*`) |
 | **Payment** | `payments`, `bookings` (balance → status promotion), `audit_logs` (`payment.*`) |
 | **Returns** | `bookings` (`completed` + `actual_return_at`), frees future `booking_days` |

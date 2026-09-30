@@ -57,6 +57,17 @@ Open the booking and use **Cancel booking** while it is `pending_payment` or
 `confirmed`. The dates are released immediately, so the vehicle can be booked
 again. (Once a hire is under way, only the office can close it.)
 
+## Your account - `/account`
+
+The **Account** link in the header opens your self-service page:
+
+- **Profile** — edit your full name, phone number and city. Your email
+  address and ID number cannot be changed here; contact the office for those.
+- **Change password** — enter your current password plus a new one (at least
+  8 characters). You stay signed in on this device, and the old password stops
+  working immediately. Too many attempts in a short period are slowed down
+  (wait a few minutes and try again).
+
 ## Your data
 
 - You only ever see **your own** bookings and payments — the server refuses

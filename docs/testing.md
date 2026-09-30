@@ -8,7 +8,7 @@ php phpunit.phar --filter Name    # by class/method name
 php phpunit.phar --testsuite Unit # see phpunit.xml
 ```
 
-Current baseline: **`OK (199 tests, 1032 assertions)`** (PHP 8.3.33,
+Current baseline: **`OK (210 tests, 1101 assertions)`** (PHP 8.3.33,
 PHPUnit 10.5.65, bundled `phpunit.phar` — no Composer install needed).
 
 Integration tests open the real database and **skip themselves** with
@@ -30,7 +30,7 @@ tests/
                              BookingConcurrency, PaymentFlow, CancellationAuth,
                              ReturnWorkflow, ReportSummary, AuditTrail,
                              SessionRevalidation, ClientDirectory,
-                             FleetAvailability
+                             FleetAvailability, AccountSelfService
 ```
 
 ## What the suites lock down
@@ -59,7 +59,7 @@ The suites cannot see Apache, so run the committed smoke script against
 php scripts/http-smoke.php
 ```
 
-**108 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
+**136 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
 non-zero on any failure:
 
 - hidden paths return **403** (`.env`, `.env.example`, `.git`, `docs/`,
@@ -78,6 +78,11 @@ non-zero on any failure:
   fleet availability badges + skip link, owner-only refund (staff 403, control
   hidden), initiation throttle (11th attempt inside the window → **429**, no
   payment row written)
+- Phase 9: account self-service — anonymous redirected, staff refused the
+  client-only profile route, forged CSRF → 403, profile edit persists +
+  audits, wrong current password leaves the hash untouched, password change
+  invalidates the old password and audits, 6th change attempt in the window →
+  **429**
 
 ## Updating expectations
 
