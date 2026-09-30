@@ -19,6 +19,7 @@ $role = Guard::role();
 <meta name="robots" content="index, follow">
 <title><?= View::e($nonceTitle) ?></title>
 <link rel="stylesheet" href="<?= View::e(View::url('/assets/css/app.css')) ?>">
+<script src="<?= View::e(View::url('/assets/js/app.js')) ?>" defer></script>
 </head>
 <body>
 <header class="site-header">
@@ -26,6 +27,7 @@ $role = Guard::role();
     <a class="brand" href="<?= View::e(View::url('/')) ?>">BIDII BENZ <span>RENTALS</span></a>
     <nav aria-label="Main navigation">
       <a href="<?= View::e(View::url('/')) ?>">Home</a>
+      <a href="<?= View::e(View::url('/cars')) ?>">Fleet</a>
       <?php if ($isAuthed): ?>
         <?php if (in_array($role, ['staff', 'owner'], true)): ?>
           <a href="<?= View::e(View::url('/admin')) ?>">Dashboard</a>

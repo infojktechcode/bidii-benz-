@@ -56,6 +56,11 @@ final class UserRepository
         return $stmt->fetchColumn() !== false;
     }
 
+    public function countClients(): int
+    {
+        return (int) $this->pdo->query('SELECT COUNT(*) FROM clients')->fetchColumn();
+    }
+
     /**
      * Create a client account (users + clients) inside one transaction.
      *

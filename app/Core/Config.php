@@ -56,6 +56,15 @@ final class Config
                 'max_bytes' => (int) $get('UPLOAD_MAX_BYTES', '2097152'),
                 'dir' => $projectRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'uploads',
             ],
+            'mpesa' => [
+                'env' => $get('MPESA_ENV', 'mock'),
+                'consumer_key' => $get('MPESA_CONSUMER_KEY', ''),
+                'consumer_secret' => $get('MPESA_CONSUMER_SECRET', ''),
+                'shortcode' => $get('MPESA_SHORTCODE', ''),
+                'passkey' => $get('MPESA_PASSKEY', ''),
+                'callback_url' => $get('MPESA_CALLBACK_URL', ''),
+                'callback_secret' => $get('MPESA_CALLBACK_SECRET', ''),
+            ],
             'logs_dir' => $projectRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs',
         ];
 
