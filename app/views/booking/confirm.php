@@ -5,9 +5,10 @@
 use App\Core\Csrf;
 use App\Core\Guard;
 use App\Core\View;
+use App\Services\PaymentService;
 
 $payable = $balance > 0.01
-    && in_array($booking['status'], ['pending_payment', 'confirmed'], true);
+    && in_array((string) $booking['status'], PaymentService::PAYABLE_STATUSES, true);
 
 require dirname(__DIR__) . '/layout/header.php';
 ?>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Audit;
 use App\Core\Config;
 use App\Core\Csrf;
 use App\Core\Database;
@@ -15,10 +16,12 @@ use App\Core\View;
 use App\Repositories\BookingRepository;
 use App\Repositories\CarRepository;
 use App\Repositories\PaymentRepository;
+use App\Repositories\ReportRepository;
 use App\Repositories\UserRepository;
 use App\Services\BookingService;
 use App\Services\PaymentService;
 use App\Services\PhotoStorage;
+use App\Services\ReportRange;
 use PDO;
 
 /**
@@ -289,8 +292,47 @@ final class AdminController
     public function completeBooking(array $params = []): void
     {
         $this->bookingAction($params, 'admin_booking_complete', function (array $booking, int $actor): array {
-            return $this->bookingService->completeBooking((int) $booking['id'], $actor);
+            // Staff may record when the vehicle was actually handed back
+            // (default: now). The service validates the value.
+            $input = Input::fromRequest();
+            $raw = $input->string('actual_return_at', 19);
+            return $this->bookingService->completeBooking(
+                (int) $booking['id'],
+                $actor,
+                $raw === '' ? null : $raw
+            );
         }, 'Vehicle return recorded — booking completed.');
+    }
+
+    // --- Reporting -----------------------------------------------------------
+
+    /**
+     * Date-range operational report (staff/owner, §8 authorization matrix).
+     * An empty range reports all time; malformed or reversed ranges are
+     * rejected and re-rendered with the submitted values intact.
+     */
+    public function reports(array $params = []): void
+    {
+        $input = Input::fromRequest();
+        // Read longer than the format so an over-long value is rejected by
+        // ReportRange instead of being silently truncated into a valid date.
+        $rawFrom = $input->string('from', 30);
+        $rawTo = $input->string('to', 30);
+
+        $range = ReportRange::parse($rawFrom, $rawTo);
+        $errors = $range['errors'];
+
+        View::render('admin/reports', [
+            'title' => 'Reports — Bidii Benz Rentals',
+            'errors' => $errors,
+            'from' => $range['from'],
+            'to' => $range['to'],
+            'raw_from' => $rawFrom,
+            'raw_to' => $rawTo,
+            'summary' => $errors === []
+                ? (new ReportRepository($this->pdo))->summary($range['from'], $range['to'])
+                : null,
+        ]);
     }
 
     // --- Payments ------------------------------------------------------------
@@ -390,11 +432,7 @@ final class AdminController
     /** @return array<int, array<string, mixed>> */
     private function paymentsForBooking(int $bookingId): array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM payments WHERE booking_id = ? ORDER BY created_at DESC'
-        );
-        $stmt->execute([$bookingId]);
-        return $stmt->fetchAll();
+        return $this->payments->findAllForBooking($bookingId);
     }
 
     /** @return list<string> */
@@ -530,22 +568,6 @@ final class AdminController
 
     private function audit(string $action, string $entity, int $entityId, ?string $detail): void
     {
-        try {
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO audit_logs (user_id, role, action, entity, entity_id, ip_address, detail)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)'
-            );
-            $stmt->execute([
-                Guard::userId(),
-                Guard::role(),
-                $action,
-                $entity,
-                $entityId,
-                substr((string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'), 0, 45),
-                $detail === null ? null : substr($detail, 0, 500),
-            ]);
-        } catch (\Throwable $e) {
-            Log::warning('Audit write failed: ' . $e->getMessage());
-        }
+        Audit::log(Guard::userId(), Guard::role(), $action, $entity, $entityId, $detail);
     }
 }

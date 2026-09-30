@@ -42,8 +42,16 @@ require dirname(__DIR__) . '/layout/header.php';
               <td>
                 <a href="<?= View::e(url('/bookings/' . (int) $b['id'])) ?>">View</a>
                 <?php if ((float) ($b['balance'] ?? 0) > 0.01
-                    && in_array($b['status'], ['pending_payment', 'confirmed'], true)): ?>
+                    && in_array((string) $b['status'], \App\Services\PaymentService::PAYABLE_STATUSES, true)): ?>
                   &middot; <a href="<?= View::e(url('/payment/' . (int) $b['id'])) ?>">Pay</a>
+                <?php endif; ?>
+                <?php if (in_array($b['status'], ['pending_payment', 'confirmed'], true)): ?>
+                  &middot;
+                  <form method="post" action="<?= View::e(url('/bookings/' . (int) $b['id'] . '/cancel')) ?>" class="inline-form">
+                    <?= \App\Core\Csrf::field('booking_cancel') ?>
+                    <button class="link-btn" type="submit"
+                            onclick="return confirm('Cancel this booking? The dates will be released.');">Cancel</button>
+                  </form>
                 <?php endif; ?>
               </td>
             </tr>

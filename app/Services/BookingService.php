@@ -163,9 +163,14 @@ final class BookingService
             return ['ok' => false, 'error' => 'This booking cannot be cancelled.'];
         }
 
-        // Client can only cancel their own
-        if ($actorRole === 'client' && $booking['client_id'] !== $actorId) {
-            return ['ok' => false, 'error' => 'Not authorized.'];
+        // Client can only cancel their own. The caller passes the signed-in
+        // user id; bookings are keyed by the client row, so resolve it first —
+        // comparing a users.id against clients.id would deny every client.
+        if ($actorRole === 'client') {
+            $clientId = $this->bookings->clientIdForUser($actorId);
+            if ($clientId === null || (int) $booking['client_id'] !== $clientId) {
+                return ['ok' => false, 'error' => 'Not authorized.'];
+            }
         }
 
         $this->bookings->updateStatus($bookingId, 'cancelled', $actorId);
@@ -173,9 +178,17 @@ final class BookingService
     }
 
     /**
-     * Mark booking as completed (staff/owner) - records actual return.
+     * Mark booking as completed (staff/owner) - records the vehicle return.
+     *
+     * The actual return time is staff-supplied when the office processes the
+     * hand-back later than the hand-back itself; it defaults to now. One status
+     * write carries both `status = completed` and `actual_return_at`, so the
+     * booking can never be half-completed.
+     *
+     * @param string|null $actualReturnAt 'Y-m-d H:i:s' or 'Y-m-d\TH:i'
+     * @return array{ok: bool, error?: string}
      */
-    public function completeBooking(int $bookingId, int $actorId): array
+    public function completeBooking(int $bookingId, int $actorId, ?string $actualReturnAt = null): array
     {
         $booking = $this->bookings->findById($bookingId);
         if ($booking === null) {
@@ -184,9 +197,43 @@ final class BookingService
         if ($booking['status'] !== 'active') {
             return ['ok' => false, 'error' => 'Only active bookings can be completed.'];
         }
-        $this->bookings->setActualReturn($bookingId, date('Y-m-d H:i:s'));
-        $this->bookings->updateStatus($bookingId, 'completed', $actorId);
+
+        $returnAt = date('Y-m-d H:i:s');
+        if ($actualReturnAt !== null && $actualReturnAt !== '') {
+            $parsed = $this->parseReturnTime($actualReturnAt);
+            if ($parsed === null) {
+                return ['ok' => false, 'error' => 'Enter a valid return date and time.'];
+            }
+            if (substr($parsed, 0, 10) < (string) $booking['pickup_date']) {
+                return ['ok' => false, 'error' => 'The return cannot be before the pickup date.'];
+            }
+            if ($parsed > date('Y-m-d H:i:s', time() + 300)) {
+                return ['ok' => false, 'error' => 'The return time cannot be in the future.'];
+            }
+            $returnAt = $parsed;
+        }
+
+        $this->bookings->updateStatus($bookingId, 'completed', $actorId, null, $returnAt);
         return ['ok' => true];
+    }
+
+    /**
+     * Normalise a submitted return time to 'Y-m-d H:i:s'.
+     * The round-trip comparison rejects calendar-overflow values such as
+     * 2026-02-31, which createFromFormat() would otherwise silently roll over.
+     * Returns null when the value is not a real datetime.
+     */
+    private function parseReturnTime(string $value): ?string
+    {
+        $value = trim($value);
+        foreach (['Y-m-d H:i:s', 'Y-m-d\TH:i', 'Y-m-d\TH:i:s'] as $format) {
+            $dt = \DateTimeImmutable::createFromFormat('!' . $format, $value);
+            if ($dt === false || $dt->format($format) !== $value) {
+                continue;
+            }
+            return $dt->format('Y-m-d H:i:s');
+        }
+        return null;
     }
 
     /**

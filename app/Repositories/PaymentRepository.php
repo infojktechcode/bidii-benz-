@@ -44,6 +44,21 @@ final class PaymentRepository
         return $row === false ? null : $row;
     }
 
+    /**
+     * Every payment recorded against one booking, newest first.
+     * Used by both the staff booking detail and the client's own payment status.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findAllForBooking(int $bookingId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM payments WHERE booking_id = ? ORDER BY created_at DESC, id DESC'
+        );
+        $stmt->execute([$bookingId]);
+        return $stmt->fetchAll();
+    }
+
     /** True when the booking already has a payment awaiting confirmation. */
     public function hasPendingForBooking(int $bookingId): bool
     {

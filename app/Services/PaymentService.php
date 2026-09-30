@@ -24,6 +24,17 @@ final class PaymentService
 {
     private const MOCK_RECEIPT_PREFIX = 'MOCK';
 
+    /**
+     * Statuses a balance may still be settled against. Cancelled bookings are
+     * deliberately excluded: their balance is written off (never shown, never
+     * collectable). An active or completed hire can still owe money, and the
+     * outstanding-balance workflow is only complete when that money can be
+     * collected in-app.
+     *
+     * @var list<string>
+     */
+    public const PAYABLE_STATUSES = ['pending_payment', 'confirmed', 'active', 'completed'];
+
     public function __construct(
         private PaymentRepository $payments,
         private BookingRepository $bookings,
@@ -78,7 +89,7 @@ final class PaymentService
         if ($booking['client_id'] !== $data['client_id']) {
             return ['ok' => false, 'error' => 'Not authorized.'];
         }
-        if ($booking['status'] !== 'pending_payment' && $booking['status'] !== 'confirmed') {
+        if (!in_array((string) $booking['status'], self::PAYABLE_STATUSES, true)) {
             return ['ok' => false, 'error' => 'Booking is not in a payable state.'];
         }
 

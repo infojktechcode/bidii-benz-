@@ -166,8 +166,28 @@ input:focus-visible { border-color: var(--accent); }
   .spec-list { grid-template-columns: 1fr; gap: .1rem; }
   .spec-list dt { margin-top: .5rem; }
   .table { font-size: .85rem; }
+  .filter-fields { flex-direction: column; align-items: stretch; }
 }
 
 @media print {
   .print-sheet .btn-row, .print-sheet a.btn { display: none; }
 }
+
+/* --- Phase 6: reports, return workflow, payment status --- */
+input[type="datetime-local"] {
+  width: 100%; padding: .65rem .75rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--text); font-size: 1rem; font-family: inherit; color-scheme: dark;
+}
+.badge-failed { background: #2a1216; border-color: var(--accent); color: #ffb3c2; }
+.badge-refunded { background: #221a2e; border-color: #6b5a9a; color: #d3c6ff; }
+
+.filter-form { margin: 1rem 0; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.filter-fields { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+.filter-fields > div { flex: 1 1 12rem; min-width: 0; }
+.filter-fields label { margin-top: 0; }
+.filter-actions { display: flex; gap: .6rem; align-items: center; flex: 0 0 auto !important; }
+.filter-actions .btn { margin-top: 0; }
+
+.return-form { display: flex; flex-wrap: wrap; gap: .6rem; align-items: flex-end; max-width: 34rem; margin-top: .75rem; }
+.return-form .field { flex: 1 1 14rem; }
+.return-form label { margin-top: 0; }

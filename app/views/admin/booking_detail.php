@@ -90,12 +90,22 @@ $action = static function (string $label, string $path, string $form, string $cl
       <?php $action('Start hire', '/admin/bookings/' . (int) $booking['id'] . '/start', 'admin_booking_start'); ?>
     <?php endif; ?>
     <?php if ($status === 'active'): ?>
-      <?php $action('Record return & complete', '/admin/bookings/' . (int) $booking['id'] . '/complete', 'admin_booking_complete'); ?>
+      <form method="post" action="<?= View::e(url('/admin/bookings/' . (int) $booking['id'] . '/complete')) ?>"
+            class="return-form" data-confirm="Record the return and mark this booking completed?">
+        <?= Csrf::field('admin_booking_complete') ?>
+        <div class="field">
+          <label for="actual_return_at">Actual return date &amp; time</label>
+          <input id="actual_return_at" name="actual_return_at" type="datetime-local"
+                 max="<?= View::e(date('Y-m-d\TH:i')) ?>"
+                 value="<?= View::e(date('Y-m-d\TH:i')) ?>">
+        </div>
+        <button class="btn" type="submit">Record return &amp; complete</button>
+      </form>
     <?php endif; ?>
     <?php if (in_array($status, ['pending_payment', 'confirmed', 'active'], true)): ?>
       <?php $action('Cancel booking', '/admin/bookings/' . (int) $booking['id'] . '/cancel', 'admin_booking_cancel', 'btn btn-secondary'); ?>
     <?php endif; ?>
-    <?php if (in_array($status, ['pending_payment', 'confirmed'], true) && (float) $balance > 0.01): ?>
+    <?php if ($status !== 'cancelled' && (float) $balance > 0.01): ?>
       <a class="btn btn-secondary" href="<?= View::e(url('/admin/payments')) ?>">Confirm a payment</a>
     <?php endif; ?>
   </div>

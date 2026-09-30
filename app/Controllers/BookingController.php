@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Audit;
 use App\Core\Config;
 use App\Core\Csrf;
 use App\Core\Guard;
@@ -12,6 +13,7 @@ use App\Core\Session;
 use App\Core\View;
 use App\Repositories\CarRepository;
 use App\Repositories\BookingRepository;
+use App\Repositories\PaymentRepository;
 use App\Services\BookingService;
 use App\Core\Database;
 
@@ -23,6 +25,7 @@ final class BookingController
     private BookingService $bookingService;
     private CarRepository $cars;
     private BookingRepository $bookings;
+    private PaymentRepository $payments;
     private Config $config;
 
     public function __construct()
@@ -31,7 +34,8 @@ final class BookingController
         $pdo = Database::connect($this->config);
         $this->cars = new CarRepository($pdo);
         $this->bookings = new BookingRepository($pdo);
-        $this->bookingService = new BookingService($this->bookings, $this->cars, new \App\Repositories\PaymentRepository($pdo));
+        $this->payments = new PaymentRepository($pdo);
+        $this->bookingService = new BookingService($this->bookings, $this->cars, $this->payments);
     }
 
     // --- Create booking ------------------------------------------------------
@@ -123,7 +127,50 @@ final class BookingController
             redirect('/cars/' . $carId . '/book');
         }
 
+        Audit::asCurrentActor(
+            'booking.create',
+            'bookings',
+            (int) $result['booking_id'],
+            (string) ($result['booking_ref'] ?? '')
+        );
+
         redirect('/booking/' . $result['booking_ref'] . '/confirm');
+    }
+
+    /**
+     * Cancel an eligible own booking (client). Ownership and the allowed source
+     * statuses are enforced server-side in BookingService — the button in the
+     * UI is only a convenience.
+     */
+    public function cancel(array $params = []): void
+    {
+        if (!Csrf::validate('booking_cancel', $_POST['_csrf'] ?? null)) {
+            $this->forbidCsrf();
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $booking = $this->bookings->findById($id);
+        if ($booking === null) {
+            Session::flash('error', 'Booking not found.');
+            redirect('/bookings');
+        }
+
+        $clientId = $this->getClientId();
+        if ($clientId === null || (int) $booking['client_id'] !== $clientId) {
+            http_response_code(403);
+            View::render('errors/403', [], 403);
+            return;
+        }
+
+        $result = $this->bookingService->cancelBooking($id, (int) Guard::userId(), 'client');
+        if (!$result['ok']) {
+            Session::flash('error', $result['error'] ?? 'This booking cannot be cancelled.');
+            redirect('/bookings/' . $id);
+        }
+
+        Audit::asCurrentActor('booking.cancel', 'bookings', $id, (string) $booking['booking_ref']);
+        Session::flash('success', 'Booking cancelled. The dates are available again.');
+        redirect('/bookings');
     }
 
     // --- Confirmation --------------------------------------------------------
@@ -203,6 +250,7 @@ final class BookingController
             'title' => 'Booking ' . $booking['booking_ref'] . ' — Bidii Benz Rentals',
             'booking' => $booking,
             'balance' => $balance,
+            'payments' => $this->payments->findAllForBooking($id),
         ]);
     }
 

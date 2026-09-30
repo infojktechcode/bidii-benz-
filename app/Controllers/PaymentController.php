@@ -53,7 +53,7 @@ final class PaymentController
             return;
         }
 
-        if (!in_array($booking['status'], ['pending_payment', 'confirmed'], true)) {
+        if (!in_array((string) $booking['status'], PaymentService::PAYABLE_STATUSES, true)) {
             Session::flash('error', 'This booking is not in a payable state.');
             redirect('/bookings');
         }

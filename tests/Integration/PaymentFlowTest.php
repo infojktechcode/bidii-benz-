@@ -573,4 +573,71 @@ final class PaymentFlowTest extends TestCase
             ])['ok']
         );
     }
+
+    // --- Phase 6: which booking states may be paid ---------------------------
+
+    public function testPayableStatesAreExactlyTheApprovedFour(): void
+    {
+        self::assertSame(
+            ['pending_payment', 'confirmed', 'active', 'completed'],
+            PaymentService::PAYABLE_STATUSES,
+            'cancelled and no_show must never be payable (Phase 6 approved scope)'
+        );
+    }
+
+    public function testAConfirmedBookingWithoutAStillCollectsTheBalance(): void
+    {
+        self::assertTrue($this->bookingsService->confirmBooking($this->bookingId, $this->fixtureUserId())['ok']);
+        self::assertSame('confirmed', $this->bookings->findById($this->bookingId)['status']);
+        self::assertSame(10000.0, $this->paymentsService->getBookingBalance($this->bookingId));
+
+        $result = $this->paymentsService->initiatePayment([
+            'booking_id' => $this->bookingId,
+            'client_id' => $this->fixtureClientId(),
+            'phone' => '0712345678',
+            'method' => 'mpesa',
+        ]);
+
+        self::assertTrue($result['ok'], 'an approved but unpaid booking must stay payable');
+        self::assertSame(
+            10000.0,
+            (float) $this->payments->findById((int) $result['payment_id'])['amount'],
+            'the collection is for the whole outstanding balance'
+        );
+    }
+
+    public function testAnActiveHireRemainsPayableWhileItIsUnderWay(): void
+    {
+        self::assertTrue($this->bookingsService->confirmBooking($this->bookingId, $this->fixtureUserId())['ok']);
+        self::assertTrue($this->bookingsService->startBooking($this->bookingId, $this->fixtureUserId())['ok']);
+
+        $result = $this->paymentsService->initiatePayment([
+            'booking_id' => $this->bookingId,
+            'client_id' => $this->fixtureClientId(),
+            'phone' => '0712345678',
+            'method' => 'cash',
+        ]);
+
+        self::assertTrue($result['ok'], 'a client paying during the hire must not be refused');
+        self::assertSame('active', $this->bookings->findById($this->bookingId)['status'], 'paying never moves the rental on');
+    }
+
+    public function testAReturnedBookingCanBeSettledAfterTheHandBack(): void
+    {
+        self::assertTrue($this->bookingsService->confirmBooking($this->bookingId, $this->fixtureUserId())['ok']);
+        self::assertTrue($this->bookingsService->startBooking($this->bookingId, $this->fixtureUserId())['ok']);
+        self::assertTrue($this->bookingsService->completeBooking($this->bookingId, $this->fixtureUserId())['ok']);
+
+        $result = $this->paymentsService->initiatePayment([
+            'booking_id' => $this->bookingId,
+            'client_id' => $this->fixtureClientId(),
+            'phone' => '0712345678',
+            'method' => 'mpesa',
+        ]);
+
+        self::assertTrue($result['ok'], 'a balance still owed after the return must be collectable');
+        $payment = $this->payments->findById((int) $result['payment_id']);
+        self::assertSame(10000.0, (float) $payment['amount'], 'the whole remaining balance is collected');
+        self::assertSame(0.0, $this->paymentsService->getBookingBalance($this->bookingId));
+    }
 }

@@ -49,6 +49,20 @@ final class BookingRepository
         return $row === false ? null : $row;
     }
 
+    /**
+     * Bridge between the two identities: a session knows `users.id`, while a
+     * booking is keyed by `clients.id`. Client-facing authorization compares
+     * against `bookings.client_id`, so it resolves through here — a booking
+     * can never be matched against the wrong table's id.
+     */
+    public function clientIdForUser(int $userId): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM clients WHERE user_id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $id = $stmt->fetchColumn();
+        return $id === false ? null : (int) $id;
+    }
+
     /** @return list<array<string, mixed>> */
     public function findByClient(int $clientId): array
     {
@@ -194,11 +208,23 @@ final class BookingRepository
      * vehicle (and must never leave a completed/confirmed status applied while
      * its days are half-deleted).
      *
+     * Completing writes the status AND the recorded return time in the same
+     * statement, so a booking can never end up `completed` without a return
+     * time, or with a return time while still `active`.
+     *
      * If a caller already has a transaction open, its own boundary is used so
      * the statements still commit or roll back together with that work.
+     *
+     * @param string|null $actualReturnAt required-format return time for
+     *        status 'completed' (validated by BookingService); defaults to now.
      */
-    public function updateStatus(int $bookingId, string $status, ?int $actorId = null, ?string $cancelledAt = null): void
-    {
+    public function updateStatus(
+        int $bookingId,
+        string $status,
+        ?int $actorId = null,
+        ?string $cancelledAt = null,
+        ?string $actualReturnAt = null
+    ): void {
         $fields = ['status = ?'];
         $params = [$status];
         if ($status === 'cancelled') {
@@ -207,7 +233,7 @@ final class BookingRepository
         }
         if ($status === 'completed') {
             $fields[] = 'actual_return_at = ?';
-            $params[] = date('Y-m-d H:i:s');
+            $params[] = $actualReturnAt ?? date('Y-m-d H:i:s');
         }
         $params[] = $bookingId;
 
@@ -233,11 +259,5 @@ final class BookingRepository
             }
             throw $e;
         }
-    }
-
-    public function setActualReturn(int $bookingId, string $returnAt): void
-    {
-        $stmt = $this->pdo->prepare('UPDATE bookings SET actual_return_at = ? WHERE id = ?');
-        $stmt->execute([$returnAt, $bookingId]);
     }
 }

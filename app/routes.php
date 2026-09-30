@@ -28,6 +28,7 @@ $router->post('/cars/{id}/book', [\App\Controllers\BookingController::class, 'cr
 $router->get('/booking/{ref}/confirm', [\App\Controllers\BookingController::class, 'confirm'], 'client');
 $router->get('/bookings', [\App\Controllers\BookingController::class, 'history'], 'client');
 $router->get('/bookings/{id}', [\App\Controllers\BookingController::class, 'detail'], 'client');
+$router->post('/bookings/{id}/cancel', [\App\Controllers\BookingController::class, 'cancel'], 'client');
 
 // Payment (client)
 $router->get('/payment/{bookingId}', [\App\Controllers\PaymentController::class, 'show'], 'client');
@@ -54,6 +55,7 @@ $router->post('/admin/bookings/{id}/complete', [\App\Controllers\AdminController
 $router->get('/admin/payments', [\App\Controllers\AdminController::class, 'payments'], 'staff');
 $router->post('/admin/payments/{id}/confirm', [\App\Controllers\AdminController::class, 'confirmPayment'], 'staff');
 $router->post('/admin/payments/{id}/refund', [\App\Controllers\AdminController::class, 'refundPayment'], 'staff');
+$router->get('/admin/reports', [\App\Controllers\AdminController::class, 'reports'], 'staff');
 
 $router->setNotFound(static function (): void {
     http_response_code(404);
