@@ -34,7 +34,10 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 header_remove('X-Powered-By');
 if ($config->isProduction()) {
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'");
+    // No view emits inline style attributes, <style> blocks or on*=
+    // handlers (enforced by tests/Unit/CspPolicyTest.php), so the policy
+    // stays strict: style-src 'self' with no unsafe-inline.
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'");
 }
 
 // HTTPS enforcement (production only; local XAMPP has no TLS)

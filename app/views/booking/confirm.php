@@ -37,7 +37,7 @@ require dirname(__DIR__) . '/layout/header.php';
   <p class="muted">A copy of this confirmation can be printed for your records.</p>
 
   <div class="btn-row">
-    <button class="btn btn-secondary" type="button" onclick="window.print()">Print confirmation</button>
+    <button class="btn btn-secondary" type="button" data-print>Print confirmation</button>
     <?php if ($payable && Guard::hasRole('client')): ?>
       <a class="btn" href="<?= View::e(url('/payment/' . (int) $booking['id'])) ?>">Pay with M-Pesa</a>
     <?php endif; ?>

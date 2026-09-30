@@ -250,4 +250,19 @@ final class UserRepository
         );
         $stmt->execute([$identifier]);
     }
+
+    /**
+     * Drop attempt rows older than the rate-limit window. Every read filters
+     * attempted_at, so out-of-window rows can never influence a block
+     * decision again — this is functional cleanup, not a retention policy
+     * (retention of in-window / audit data stays a policy decision).
+     */
+    public function pruneAttempts(int $beforeUnix): int
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM login_attempts WHERE attempted_at < FROM_UNIXTIME(?)'
+        );
+        $stmt->execute([$beforeUnix]);
+        return $stmt->rowCount();
+    }
 }

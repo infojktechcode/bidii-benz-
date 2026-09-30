@@ -25,6 +25,15 @@
     }
   });
 
+  document.addEventListener('click', function (event) {
+    var target = event.target;
+    // Buttons declare behavior through data-attributes so the production
+    // CSP (script-src 'self') never has to allow inline handlers.
+    if (target instanceof Element && target.closest('[data-print]')) {
+      window.print();
+    }
+  });
+
   document.addEventListener('DOMContentLoaded', function () {
     var alerts = document.querySelectorAll('.alert[role="status"]');
     Array.prototype.forEach.call(alerts, function (alert) {

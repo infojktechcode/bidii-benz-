@@ -112,6 +112,12 @@ final class AuthService
         $now = time();
         $since = $now - RateLimiter::WINDOW_SECONDS;
 
+        // Housekeeping: rows outside the window are dead weight for the
+        // limiter (the reads below never see them). No index is leftmost on
+        // attempted_at, so keep the table bounded with this one DELETE per
+        // sign-in attempt.
+        $this->users->pruneAttempts($since);
+
         $idFails = $this->users->recentFailures($identifier, $since);
         $ipFails = $this->users->recentFailuresByIp($ip, $since);
 
@@ -195,7 +201,19 @@ final class AuthService
             return ['ok' => false, 'errors' => $errors];
         }
 
-        $this->users->updateProfile($userId, $fullName, $phone, $city);
+        try {
+            $this->users->updateProfile($userId, $fullName, $phone, $city);
+        } catch (PDOException $e) {
+            // The pre-check filters deleted_at, so a soft-deleted holder (or
+            // a genuine concurrent update) can still trip the unique key
+            // between the check and the UPDATE. Map it to a field error the
+            // same way register() does; anything else is an infrastructure
+            // failure and keeps the normal handled-500 path.
+            if (str_contains($e->getMessage(), 'uq_users_phone')) {
+                return ['ok' => false, 'errors' => ['phone' => 'That phone number is already in use.']];
+            }
+            throw $e;
+        }
         return ['ok' => true, 'errors' => []];
     }
 

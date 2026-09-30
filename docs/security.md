@@ -67,7 +67,10 @@ Set on every response by `public/index.php`:
 - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
 - `X-Powered-By` removed
 - `Content-Security-Policy: default-src 'self'; img-src 'self' data:;
-  style-src 'self' 'unsafe-inline'; script-src 'self'` (production only)
+  style-src 'self'; script-src 'self'` (production only — no `unsafe-inline`:
+  no view emits inline handlers, `style=""` or `<style>` blocks, locked down
+  by `tests/Unit/CspPolicyTest.php`; buttons use `data-*` hooks handled by
+  `public/assets/js/app.js`)
 - HTTPS redirect when `APP_ENV=production` — the `Location` host comes from the
   configured `APP_URL`, **never** from the request `Host` header (a forged Host
   cannot turn the redirect into an open redirect; if `APP_URL` is unusable the
@@ -113,6 +116,7 @@ auth.login · auth.login_failed · auth.register · auth.logout
 vehicle.create · vehicle.update · vehicle.delete
 booking.create · booking.confirm · booking.start · booking.cancel · booking.complete
 payment.initiate · payment.confirm · payment.refund
+account.profile_updated · account.password_changed · account.password_change_failed
 ```
 
 Each row stores user id, role, action, entity, entity id, IP and a bounded
@@ -137,7 +141,15 @@ payments and audit rows is required before go-live (not yet implemented).
 | No password reset / forgot-password flow | Not in the approved requirements. |
 | `no_show` status unreachable | Reserved in the schema; no workflow yet. |
 | Live Daraja integration | Refused rather than faked (see payments). |
+| Payment-initiation throttle is session-scoped | Acceptable while payments are mock/manual; re-harden (IP/DB counter) before live activation. |
+| `audit_logs` retention | Policy decision outstanding (Kenya DPA); `login_attempts` rows older than the 900 s window are already pruned on every sign-in attempt. |
 
 Resolved in Phase 8 (kept for the record): the HTTPS redirect no longer trusts
 `HTTP_HOST` (now pinned to `APP_URL`), and refunds moved from `staff` to
 `owner`-only.
+
+Resolved in Phase 10: the production CSP no longer allows `style-src
+'unsafe-inline'` and carries no inline `on*=` handlers (print/cancel moved to
+`app.js` via `data-*` attributes); a profile phone update that collides with a
+unique key the pre-check cannot see (concurrent update / soft-deleted holder)
+now returns a field error instead of an uncaught 500.

@@ -168,6 +168,43 @@ final class AccountSelfServiceTest extends TestCase
         self::assertTrue($result['ok'], json_encode($result['errors']));
     }
 
+    public function testProfileUpdateMapsAUniquePhoneCollisionToAFieldError(): void
+    {
+        // A soft-deleted row still owns the phone under uq_users_phone, but
+        // findByPhone() filters deleted_at — the visibility gap the pre-check
+        // cannot see (the same shape as a genuine concurrent update). This
+        // used to escape as an uncaught PDOException (500 page); it must
+        // come back as a field error instead.
+        $client = $this->createClient();
+        do {
+            $taken = '0712' . random_int(100000, 999999);
+        } while ($this->users->findByPhone($taken) !== null);
+
+        $ghostEmail = 'acctghost-' . bin2hex(random_bytes(6)) . '@example.test';
+        $this->cleanupEmails[] = $ghostEmail;
+        self::$pdo->prepare(
+            'INSERT INTO users (role, email, phone, password_hash, status, deleted_at)
+             VALUES ("client", ?, ?, "unused", "active", NOW())'
+        )->execute([$ghostEmail, $taken]);
+
+        self::assertNull(
+            $this->users->findByPhone($taken),
+            'the holder must be invisible to the pre-check, or this tests nothing'
+        );
+
+        $result = $this->auth->updateProfile($client['user_id'], 'Account Test Client', $taken, 'Nairobi');
+        self::assertFalse($result['ok']);
+        self::assertSame('That phone number is already in use.', $result['errors']['phone'] ?? '');
+
+        $profile = $this->users->findProfileByUserId($client['user_id']);
+        self::assertNotNull($profile);
+        self::assertSame(
+            $client['phone'],
+            (string) $profile['phone'],
+            'the collision must leave the client\'s phone untouched'
+        );
+    }
+
     // --- password change -----------------------------------------------------
 
     public function testPasswordChangeRejectsWrongCurrentPassword(): void

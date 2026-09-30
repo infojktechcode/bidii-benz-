@@ -47,10 +47,10 @@ require dirname(__DIR__) . '/layout/header.php';
                 <?php endif; ?>
                 <?php if (in_array($b['status'], ['pending_payment', 'confirmed'], true)): ?>
                   &middot;
-                  <form method="post" action="<?= View::e(url('/bookings/' . (int) $b['id'] . '/cancel')) ?>" class="inline-form">
+                  <form method="post" action="<?= View::e(url('/bookings/' . (int) $b['id'] . '/cancel')) ?>" class="inline-form"
+                        data-confirm="Cancel this booking? The dates will be released.">
                     <?= \App\Core\Csrf::field('booking_cancel') ?>
-                    <button class="link-btn" type="submit"
-                            onclick="return confirm('Cancel this booking? The dates will be released.');">Cancel</button>
+                    <button class="link-btn" type="submit">Cancel</button>
                   </form>
                 <?php endif; ?>
               </td>

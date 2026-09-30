@@ -272,4 +272,29 @@ final class AuthFlowTest extends TestCase
         $stmt->execute([$email]);
         self::assertSame(1, (int) $stmt->fetchColumn());
     }
+
+    public function testLoginPrunesAttemptRowsOlderThanTheWindow(): void
+    {
+        $stale = $this->unknownIdentifier();
+        $fresh = $this->unknownIdentifier();
+
+        self::$pdo->prepare(
+            'INSERT INTO login_attempts (identifier, ip_address, successful, attempted_at)
+             VALUES (?, "10.9.9.8", 0, DATE_SUB(NOW(), INTERVAL 2 DAY))'
+        )->execute([$stale]);
+        self::$pdo->prepare(
+            'INSERT INTO login_attempts (identifier, ip_address, successful, attempted_at)
+             VALUES (?, "10.9.9.8", 0, NOW())'
+        )->execute([$fresh]);
+
+        // Any sign-in attempt performs the housekeeping.
+        $this->auth->login($this->unknownIdentifier(), 'Whatever123', '127.0.0.1');
+
+        $stmt = self::$pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE identifier = ?');
+        $stmt->execute([$stale]);
+        self::assertSame(0, (int) $stmt->fetchColumn(), 'rows past the window are dropped');
+
+        $stmt->execute([$fresh]);
+        self::assertSame(1, (int) $stmt->fetchColumn(), 'in-window rows still count toward the limiter');
+    }
 }

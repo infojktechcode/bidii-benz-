@@ -8,7 +8,7 @@ php phpunit.phar --filter Name    # by class/method name
 php phpunit.phar --testsuite Unit # see phpunit.xml
 ```
 
-Current baseline: **`OK (210 tests, 1101 assertions)`** (PHP 8.3.33,
+Current baseline: **`OK (214 tests, 1123 assertions)`** (PHP 8.3.33,
 PHPUnit 10.5.65, bundled `phpunit.phar` — no Composer install needed).
 
 Integration tests open the real database and **skip themselves** with
@@ -25,7 +25,7 @@ tests/
                              tearDown so tests never touch seeded rows
   Unit/                      no database: Config, Env, Router, Csrf, Input,
                              Guard, RouteGuard, RouteTarget, Auth (service),
-                             RateLimiter, ReportRange
+                             RateLimiter, ReportRange, CspPolicy
   Integration/               real database: Schema, AuthFlow, BookingFlow,
                              BookingConcurrency, PaymentFlow, CancellationAuth,
                              ReturnWorkflow, ReportSummary, AuditTrail,
@@ -49,6 +49,7 @@ tests/
 | Audit | Actor/action/entity written, payload clipped, failures never break the action, no credential column exists, viewer reads rows with the actor joined in |
 | Clients | Directory lists every client with totals, profile resolves, unknown id → null (404) |
 | Availability | The listing badge reads `booking_days` (same source as `isAvailable`): free car absent, booking reports its return date, cancelling releases it |
+| CSP policy | The production CSP declares no `unsafe-inline`/`unsafe-eval`, and no view emits inline `on*=` handlers, `style=""` attributes, `<style>` blocks or src-less `<script>` — the production header can stay strict (`CspPolicyTest`) |
 
 ## Live HTTP checks
 
@@ -59,7 +60,7 @@ The suites cannot see Apache, so run the committed smoke script against
 php scripts/http-smoke.php
 ```
 
-**136 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
+**140 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
 non-zero on any failure:
 
 - hidden paths return **403** (`.env`, `.env.example`, `.git`, `docs/`,
@@ -83,6 +84,9 @@ non-zero on any failure:
   audits, wrong current password leaves the hash untouched, password change
   invalidates the old password and audits, 6th change attempt in the window →
   **429**
+- Phase 10: CSP safety — booking history cancel uses `data-confirm`, the
+  confirmation page prints via `data-print`, neither page ships an inline
+  `onclick`
 
 ## Updating expectations
 

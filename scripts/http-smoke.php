@@ -296,6 +296,8 @@ check($r['code'] === 403, 'client /admin/audit is forbidden', "code {$r['code']}
 
 $r = req($c1, 'GET', '/bookings');
 check($r['code'] === 200, 'client can open their booking history', "code {$r['code']}");
+check(!str_contains($r['body'], 'onclick='), 'booking history carries no inline event handlers');
+check(str_contains($r['body'], 'data-confirm='), 'the cancel form uses the CSP-safe data-confirm attribute');
 
 if ($otherId > 0) {
     $r = req($c1, 'GET', '/bookings/' . $otherId);
@@ -314,6 +316,13 @@ $client1Booking = (int) $st->fetchColumn();
 $r = req($c1, 'GET', '/bookings/' . $client1Booking);
 check($r['code'] === 200 && str_contains($r['body'], 'Payments'),
     'client booking detail shows the payment records', "code {$r['code']}");
+
+$st = $pdo->prepare('SELECT booking_ref FROM bookings WHERE id = ?');
+$st->execute([$client1Booking]);
+$r = req($c1, 'GET', '/booking/' . $st->fetchColumn() . '/confirm');
+check($r['code'] === 200, 'client opens their own confirmation page', "code {$r['code']}");
+check(str_contains($r['body'], 'data-print') && !str_contains($r['body'], 'onclick='),
+    'the print action is CSP-safe (data-print, no inline handler)');
 
 // ==================================================== booking lifecycle (CSRF)
 $bookingA = createBooking($pdo, $c1, $carId, 60, $created);
