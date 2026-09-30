@@ -29,7 +29,7 @@ $badge = static fn (string $s): string => $s === 'confirmed' ? 'confirmed'
   <p class="muted">Outstanding balance across all bookings: KES <?= View::e(number_format((float) $outstanding, 2)) ?></p>
 
   <?php if ($payments === []): ?>
-    <p class="alert alert-error">No payments match this filter.</p>
+    <div class="empty-state"><p>No payments match this filter.</p></div>
   <?php else: ?>
     <div class="table-wrap">
       <table class="table">

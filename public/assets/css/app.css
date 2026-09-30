@@ -1,12 +1,15 @@
 :root {
   --bg: #0e1117;
   --surface: #171c26;
+  --surface-2: #1d2330;
   --text: #e8eaf0;
   --muted: #9aa3b2;
   --accent: #c00f3a;
   --accent-hover: #e01a4a;
+  --accent-text: #ff5c7d;
   --border: #2a3140;
   --radius: 10px;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -17,6 +20,9 @@ body {
   color: var(--text);
   line-height: 1.55;
 }
+a { color: var(--accent-text); }
+a:visited { color: var(--accent-text); }
+a:hover { color: #ff8fa6; }
 .container { width: min(1100px, 100% - 2rem); margin-inline: auto; }
 .site-header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
 .site-header .container { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: .75rem 0; gap: .5rem; }
@@ -49,7 +55,19 @@ main.container { padding: 2rem 0 3rem; min-height: 60vh; }
 
 /* Pagination row (audit viewer) */
 .pager { display: flex; align-items: center; gap: .75rem; margin-top: 1rem; font-size: .9rem; }
-.pager a { color: var(--accent-hover); }
+.pager a { color: var(--accent-text); }
+
+/* Neutral empty state — never styled as an error */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1.25rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin: 1.5rem 0;
+}
+.empty-state p { margin: 0 auto .75rem; color: var(--muted); max-width: 34rem; }
+.empty-state .btn { margin-top: .5rem; }
 
 /* Alerts (flash messages) */
 .alert { padding: .75rem 1rem; border-radius: var(--radius); margin: 1rem 0; font-size: .95rem; }
@@ -72,11 +90,35 @@ input[type="text"], input[type="email"], input[type="password"], input[type="tel
 input:focus-visible { border-color: var(--accent); }
 .btn-block { display: block; width: 100%; margin-top: 1.5rem; text-align: center; }
 .muted { color: var(--muted); font-size: .9rem; }
-.auth-card a { color: var(--accent-hover); }
+.auth-card a { color: var(--accent-text); }
 
 /* Nav extras */
 .nav-user { color: var(--muted); font-size: .9rem; margin-left: 1rem; }
 .nav-inline { display: inline; margin-left: .5rem; }
+
+/* Mobile drawer: JS adds .js to <html>; without JS the nav stays visible
+   (wrapping, as before) and the toggle button never renders. */
+.nav-toggle { display: none; }
+@media (max-width: 768px) {
+  .js .nav-toggle {
+    display: inline-flex; align-items: center;
+    min-height: 44px; padding: .5rem .9rem;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font: inherit; font-size: .95rem; font-weight: 600; cursor: pointer;
+  }
+  .js .nav-toggle:hover, .js .nav-toggle:focus { background: var(--surface-2); }
+  .js .nav-panel { display: none; width: 100%; flex-direction: column; gap: .25rem; padding-top: .5rem; }
+  .js .nav-panel.is-open { display: flex; }
+  .js .nav-panel a, .js .nav-panel .link-btn {
+    display: flex; align-items: center; min-height: 44px;
+    margin-left: 0; padding: .35rem .5rem; font-size: 1rem;
+    border-radius: var(--radius);
+  }
+  .js .nav-panel a:hover, .js .nav-panel a:focus { background: var(--surface-2); }
+  .js .nav-panel .nav-user { margin-left: .5rem; padding: .35rem .5rem; }
+  .js .nav-panel .nav-inline { display: block; margin-left: 0; padding: 0 .5rem .5rem; }
+}
 .link-btn { background: none; border: 0; color: var(--muted); cursor: pointer; font: inherit; font-size: .95rem; padding: 0; text-decoration: underline; }
 .link-btn:hover, .link-btn:focus { color: var(--text); }
 
@@ -146,7 +188,7 @@ input:focus-visible { border-color: var(--accent); }
 .table thead th { background: var(--surface); color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
 .table tbody tr:last-child td { border-bottom: 0; }
 .table tbody tr:hover { background: #12161f; }
-.table a { color: var(--accent-hover); }
+.table a { color: var(--accent-text); }
 
 /* Status badges */
 .badge { display: inline-block; padding: .18rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 600;

@@ -24,9 +24,11 @@ $role = Guard::role();
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
-  <div class="container">
+  <div class="container header-bar">
     <a class="brand" href="<?= View::e(View::url('/')) ?>">BIDII BENZ <span>RENTALS</span></a>
-    <nav aria-label="Main navigation">
+    <button type="button" class="nav-toggle" data-nav-toggle
+            aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav id="site-nav" class="nav-panel" aria-label="Main navigation">
       <a href="<?= View::e(View::url('/')) ?>">Home</a>
       <a href="<?= View::e(View::url('/cars')) ?>">Fleet</a>
       <?php if ($isAuthed): ?>

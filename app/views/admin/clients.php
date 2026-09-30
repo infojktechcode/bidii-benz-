@@ -15,7 +15,7 @@ require dirname(__DIR__) . '/layout/header.php';
      Select a client to see their bookings and payment history.</p>
 
   <?php if ($clients === []): ?>
-    <p class="alert alert-error">No clients registered yet.</p>
+    <div class="empty-state"><p>No clients registered yet.</p></div>
   <?php else: ?>
     <div class="table-wrap">
       <table class="table">

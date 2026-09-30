@@ -73,7 +73,7 @@ $qs = static function (int $p) use ($filterAction, $filterUser): string {
   </form>
 
   <?php if ($entries === []): ?>
-    <p class="alert alert-error">No audit entries match this filter.</p>
+    <div class="empty-state"><p>No audit entries match this filter.</p></div>
   <?php else: ?>
     <div class="table-wrap">
       <table class="table">

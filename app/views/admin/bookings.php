@@ -32,7 +32,7 @@ $statusLabels = [
   </div>
 
   <?php if ($bookings === []): ?>
-    <p class="alert alert-error">No bookings match this filter.</p>
+    <div class="empty-state"><p>No bookings match this filter.</p></div>
   <?php else: ?>
     <div class="table-wrap">
       <table class="table">

@@ -860,6 +860,17 @@ check($r['code'] === 200, 'the authenticated account page renders for the cache 
 check(str_contains($r['head'], 'Cache-Control:') && str_contains($r['head'], 'no-store'),
     'authenticated responses carry Cache-Control: no-store', $r['head']);
 
+// ============================================ Phase 11 UI: chrome foundations
+echo '-- Phase 11 UI: navigation and empty states --' . PHP_EOL;
+$r = req(jar(), 'GET', '/');
+check($r['code'] === 200 && str_contains($r['body'], 'data-nav-toggle'),
+    'the homepage renders the mobile navigation toggle', "code {$r['code']}");
+check(str_contains($r['body'], 'aria-controls="site-nav"'),
+    'the toggle is wired to the navigation panel');
+$r = req(jar(), 'GET', '/cars');
+check(str_contains($r['body'], 'Our Fleet') && !str_contains($r['body'], 'alert alert-error">No vehicles'),
+    'the fleet page ships no red error styling for empty results', "code {$r['code']}");
+
 // ================================================================== cleanup
 $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$staffUserId]);
 $pdo->prepare('DELETE FROM audit_logs WHERE detail LIKE ?')->execute(['%' . $email . '%']);

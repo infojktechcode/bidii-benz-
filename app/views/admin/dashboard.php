@@ -53,7 +53,7 @@ $statusLabels = [
 
   <h2>Recent bookings</h2>
   <?php if ($recent === []): ?>
-    <p class="muted">No bookings yet.</p>
+    <div class="empty-state"><p>No bookings yet.</p></div>
   <?php else: ?>
     <div class="table-wrap">
       <table class="table">

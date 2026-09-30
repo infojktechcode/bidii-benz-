@@ -10,8 +10,10 @@ require dirname(__DIR__) . '/layout/header.php';
   <h1>My bookings</h1>
 
   <?php if ($bookings === []): ?>
-    <p class="alert alert-error">You have no bookings yet.</p>
-    <p><a class="btn" href="<?= View::e(url('/cars')) ?>">Browse the fleet</a></p>
+    <div class="empty-state">
+      <p>You have no bookings yet.</p>
+      <a class="btn" href="<?= View::e(url('/cars')) ?>">Browse the fleet</a>
+    </div>
   <?php else: ?>
     <div class="table-wrap">
       <table class="table">

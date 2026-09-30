@@ -13,7 +13,9 @@ require dirname(__DIR__) . '/layout/header.php';
   <p class="muted">Mercedes-Benz vehicles available for hire in Kitengela, Kajiado County.</p>
 
   <?php if ($cars === []): ?>
-    <p class="alert alert-error">No vehicles are available right now. Please check back soon.</p>
+    <div class="empty-state">
+      <p>No vehicles are available right now. Please check back soon.</p>
+    </div>
   <?php else: ?>
     <div class="card-grid">
       <?php foreach ($cars as $car): ?>

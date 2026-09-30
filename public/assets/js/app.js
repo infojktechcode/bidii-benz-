@@ -3,6 +3,10 @@
 (function () {
   'use strict';
 
+  // Marks the document as JS-capable so the mobile drawer CSS activates;
+  // without JS the toggle stays hidden and the nav links simply wrap.
+  document.documentElement.classList.add('js');
+
   document.addEventListener('submit', function (event) {
     var form = event.target;
     if (!(form instanceof HTMLFormElement)) {
@@ -35,6 +39,24 @@
   });
 
   document.addEventListener('DOMContentLoaded', function () {
+    var toggle = document.querySelector('[data-nav-toggle]');
+    var panel = document.getElementById('site-nav');
+    if (toggle && panel) {
+      var setOpen = function (open) {
+        panel.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      toggle.addEventListener('click', function () {
+        setOpen(!panel.classList.contains('is-open'));
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && panel.classList.contains('is-open')) {
+          setOpen(false);
+          toggle.focus();
+        }
+      });
+    }
+
     var alerts = document.querySelectorAll('.alert[role="status"]');
     Array.prototype.forEach.call(alerts, function (alert) {
       window.setTimeout(function () {
