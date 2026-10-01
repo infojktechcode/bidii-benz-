@@ -10,8 +10,8 @@ rotation. Local XAMPP development never needs this file.
 Run on the machine where the release candidate is checked out:
 
 ```
-php phpunit.phar                 # baseline: OK (221 tests, 1135 assertions)
-php scripts/http-smoke.php       # 152 checks, needs local Apache up
+php phpunit.phar                 # baseline: OK (225 tests, 1156 assertions)
+php scripts/http-smoke.php       # 169 checks, needs local Apache up
 php scripts/migrate.php status   # 0 pending
 git status --short               # clean, HEAD on the intended release commit
 ```

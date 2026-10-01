@@ -1,8 +1,8 @@
 # Requirements — implementation traceability
 
 Every requirement of the study mapped to the code, tests and HTTP checks that
-prove it. Verified at the **Phase 11 UI/UX checkpoint**:
-`OK (221 tests, 1135 assertions)` + smoke **152/152** + lint 96 files clean.
+prove it. Verified at the **Phase 11A dashboard checkpoint**:
+`OK (225 tests, 1156 assertions)` + smoke **169/169** + lint 97 files clean.
 
 Status legend: **COMPLETE — VERIFIED** (implemented and covered by automated
 evidence), **OUT OF SCOPE** (deliberately excluded, never a study requirement).
@@ -36,7 +36,7 @@ evidence), **OUT OF SCOPE** (deliberately excluded, never a study requirement).
 | A5 | Booking management (confirm/start/complete) | COMPLETE — VERIFIED | lifecycle in `BookingService`, smoke booking lifecycle, `CancellationAuthTest` |
 | A6 | Payment management (confirm/refund) | COMPLETE — VERIFIED | smoke confirm + owner-refund checks; audit `payment.refunded` |
 | A7 | Returns workflow (start → complete) | COMPLETE — VERIFIED | `ReturnWorkflowTest` (12), vehicle returns to circulation |
-| A8 | Outstanding balances | COMPLETE — VERIFIED | balance math per part-payment (`PaymentFlowTest`), report totals match |
+| A8 | Outstanding balances | COMPLETE — VERIFIED | balance math per part-payment (`PaymentFlowTest`), report totals match, all-time outstanding subtracts every confirmed payment (`DashboardTest`) |
 | A9 | Reports (5 views, date ranges) | COMPLETE — VERIFIED | `ReportSummaryTest`, `ReportRangeTest`, smoke reports render |
 | A10 | Audit logging + viewer | COMPLETE — VERIFIED | append-only `audit_logs`, `AuditTrailTest`, smoke "audit viewer" (staff sees own, owner sees all) |
 

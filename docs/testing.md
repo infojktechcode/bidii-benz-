@@ -8,7 +8,7 @@ php phpunit.phar --filter Name    # by class/method name
 php phpunit.phar --testsuite unit # suites (lowercase): unit | integration
 ```
 
-Current baseline: **`OK (221 tests, 1135 assertions)`** (PHP 8.3.33,
+Current baseline: **`OK (225 tests, 1156 assertions)`** (PHP 8.3.33,
 PHPUnit 10.5.65, bundled `phpunit.phar` — no Composer install needed).
 
 Integration tests open the real database and **skip themselves** with
@@ -33,8 +33,9 @@ tests/
   Integration/               real database: Schema, AuthFlow, BookingFlow,
                              BookingConcurrency, PaymentFlow, CancellationAuth,
                              ReturnWorkflow, ReportSummary, AuditTrail,
-                             SessionRevalidation, ClientDirectory,
-                             FleetAvailability, AccountSelfService
+                              SessionRevalidation, ClientDirectory,
+                              FleetAvailability, AccountSelfService,
+                              Dashboard
 ```
 
 ## What the suites lock down
@@ -53,6 +54,7 @@ tests/
 | Audit | Actor/action/entity written, payload clipped, failures never break the action, no credential column exists, viewer reads rows with the actor joined in |
 | Clients | Directory lists every client with totals, profile resolves, unknown id → null (404) |
 | Availability | The listing badge reads `booking_days` (same source as `isAvailable`): free car absent, booking reports its return date, cancelling releases it |
+| Dashboards | Outstanding balance subtracts **every** confirmed payment across non-cancelled bookings, KPI counters track live state, "available today" equals active fleet minus occupied, inactive/deleted vehicles never count (`DashboardTest`) |
 | CSP policy | The production CSP declares no `unsafe-inline`/`unsafe-eval`, and no view emits inline `on*=` handlers, `style=""` attributes, `<style>` blocks or src-less `<script>` — the production header can stay strict (`CspPolicyTest`) |
 
 ## Live HTTP checks
@@ -64,7 +66,7 @@ The suites cannot see Apache, so run the committed smoke script against
 php scripts/http-smoke.php
 ```
 
-**152 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
+**169 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
 non-zero on any failure:
 
 - hidden paths return **403** (`.env`, `.env.example`, `.git`, `docs/`,
@@ -94,6 +96,11 @@ non-zero on any failure:
 - Phase 11: registration cap — first 5 attempts in the window handled, 6th →
   **429** (no row written), and authenticated responses carry
   `Cache-Control: no-store`
+- Phase 11A: dashboards — client login lands on `/bookings`, client dashboard
+  sections/quick actions/empty-state CTAs, admin KPI grid + operational
+  sections + quick actions, dashboard rail + `aria-current` + role chip for
+  staff/owner, no rail for clients or anonymous visitors, responsive
+  `data-cards` tables
 
 ## Updating expectations
 
