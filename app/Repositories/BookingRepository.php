@@ -127,16 +127,23 @@ final class BookingRepository
 
     /**
      * Money still owed across every non-cancelled booking.
+     *
+     * Both figures are aggregated independently: MariaDB 10.4 hoists a scalar
+     * subquery that references the outer aggregate's rows, so the previous
+     * `SUM(total) - (correlated subquery)` shape subtracted only ONE booking's
+     * confirmed payments. Confirmed payments on cancelled bookings are
+     * excluded, mirroring the report-level balance semantics.
      */
     public function outstandingBalance(): float
     {
         $sql = 'SELECT COALESCE((
-                    SELECT SUM(b.total_amount) - (
-                        SELECT COALESCE(SUM(p.amount), 0) FROM payments p
-                        WHERE p.booking_id = b.id AND p.status = "confirmed"
-                    )
-                    FROM bookings b
-                    WHERE b.status <> "cancelled"
+                    SELECT SUM(total_amount) FROM bookings WHERE status <> "cancelled"
+                ), 0)
+                - COALESCE((
+                    SELECT SUM(p.amount)
+                    FROM payments p
+                    JOIN bookings b ON b.id = p.booking_id
+                    WHERE p.status = "confirmed" AND b.status <> "cancelled"
                 ), 0)';
         return round((float) $this->pdo->query($sql)->fetchColumn(), 2);
     }
