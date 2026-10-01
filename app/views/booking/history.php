@@ -15,7 +15,7 @@ require dirname(__DIR__) . '/layout/header.php';
       <a class="btn" href="<?= View::e(url('/cars')) ?>">Browse the fleet</a>
     </div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Your bookings table">
       <table class="table">
         <thead>
           <tr>

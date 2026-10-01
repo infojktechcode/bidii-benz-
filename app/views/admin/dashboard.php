@@ -55,7 +55,7 @@ $statusLabels = [
   <?php if ($recent === []): ?>
     <div class="empty-state"><p>No bookings yet.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Recent bookings table">
       <table class="table">
         <thead>
           <tr>

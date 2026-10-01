@@ -16,7 +16,7 @@ require dirname(__DIR__) . '/layout/header.php';
   <?php if ($cars === []): ?>
     <div class="empty-state"><p>No vehicles in the fleet yet.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Vehicles table">
       <table class="table">
         <thead>
           <tr>

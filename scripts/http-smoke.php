@@ -871,6 +871,14 @@ $r = req(jar(), 'GET', '/cars');
 check(str_contains($r['body'], 'Our Fleet') && !str_contains($r['body'], 'alert alert-error">No vehicles'),
     'the fleet page ships no red error styling for empty results', "code {$r['code']}");
 
+// ================================================ Phase 11 UI: mobile tables
+echo '-- Phase 11 UI: keyboard-scrollable tables --' . PHP_EOL;
+$r = req(jar(), 'GET', '/login');
+check(str_contains($r['body'], 'assets/favicon.svg'), 'the favicon is linked in the page head', "code {$r['code']}");
+$r = req($cacheJar, 'GET', '/bookings');
+check(str_contains($r['body'], 'table-wrap" tabindex="0"'),
+    'client data tables are keyboard-scrollable regions', "code {$r['code']}");
+
 // ================================================================== cleanup
 $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$staffUserId]);
 $pdo->prepare('DELETE FROM audit_logs WHERE detail LIKE ?')->execute(['%' . $email . '%']);

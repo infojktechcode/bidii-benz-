@@ -31,7 +31,7 @@ $badge = static fn (string $s): string => $s === 'confirmed' ? 'confirmed'
   <?php if ($payments === []): ?>
     <div class="empty-state"><p>No payments match this filter.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Payments table">
       <table class="table">
         <thead>
           <tr>

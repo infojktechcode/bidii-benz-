@@ -126,7 +126,7 @@ if ($from !== null || $to !== null) {
     <?php if ($summary['by_vehicle'] === []): ?>
       <p class="muted">No vehicle activity in this period.</p>
     <?php else: ?>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Report results table">
         <table class="table">
           <thead>
             <tr>
@@ -155,7 +155,7 @@ if ($from !== null || $to !== null) {
     <?php if ($summary['by_client'] === []): ?>
       <p class="muted">No client activity in this period.</p>
     <?php else: ?>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Report results table">
         <table class="table">
           <thead>
             <tr>

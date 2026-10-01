@@ -55,7 +55,7 @@ $paymentBadge = static function (string $status): string {
   <?php if ($payments === []): ?>
     <p class="muted">No payments recorded yet.</p>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Payments for this booking table">
       <table class="table">
         <thead>
           <tr>

@@ -17,7 +17,7 @@ require dirname(__DIR__) . '/layout/header.php';
   <?php if ($clients === []): ?>
     <div class="empty-state"><p>No clients registered yet.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Clients table">
       <table class="table">
         <thead>
           <tr>

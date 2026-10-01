@@ -58,7 +58,7 @@ $action = static function (string $label, string $path, string $form, string $cl
       <?php if ($payments === []): ?>
         <p class="muted">No payments recorded.</p>
       <?php else: ?>
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Payments table">
           <table class="table">
             <thead>
               <tr><th scope="col">Amount</th><th scope="col">Method</th>

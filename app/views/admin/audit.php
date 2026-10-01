@@ -75,7 +75,7 @@ $qs = static function (int $p) use ($filterAction, $filterUser): string {
   <?php if ($entries === []): ?>
     <div class="empty-state"><p>No audit entries match this filter.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Audit entries table">
       <table class="table">
         <thead>
           <tr>

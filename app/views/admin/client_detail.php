@@ -32,7 +32,7 @@ require dirname(__DIR__) . '/layout/header.php';
   </div>
 
   <h2>Contact details</h2>
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Contact details table">
     <table class="table">
       <tbody>
         <tr><th scope="row">Email</th><td><?= View::e($client['email']) ?></td></tr>
@@ -47,9 +47,9 @@ require dirname(__DIR__) . '/layout/header.php';
 
   <h2>Bookings</h2>
   <?php if ($bookings === []): ?>
-    <p class="muted">No bookings yet.</p>
+    <div class="empty-state"><p>No bookings yet.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Client bookings table">
       <table class="table">
         <thead>
           <tr>
@@ -81,9 +81,9 @@ require dirname(__DIR__) . '/layout/header.php';
 
   <h2>Payments</h2>
   <?php if ($payments === []): ?>
-    <p class="muted">No payments recorded.</p>
+    <div class="empty-state"><p>No payments recorded.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Client payments table">
       <table class="table">
         <thead>
           <tr>

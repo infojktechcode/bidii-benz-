@@ -34,7 +34,7 @@ $statusLabels = [
   <?php if ($bookings === []): ?>
     <div class="empty-state"><p>No bookings match this filter.</p></div>
   <?php else: ?>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Bookings table">
       <table class="table">
         <thead>
           <tr>
