@@ -22,8 +22,7 @@ $action = static function (string $label, string $path, string $form, string $cl
   <p><a href="<?= View::e(url('/admin/bookings')) ?>">&larr; Bookings</a></p>
   <div class="page-head">
     <h1>Booking <?= View::e($booking['booking_ref']) ?></h1>
-    <span class="badge badge-<?= View::e(str_replace('_', '-', $status)) ?>">
-      <?= View::e(ucwords(str_replace('_', ' ', $status))) ?></span>
+    <?= $statusBadge($status) ?>
   </div>
 
   <div class="two-col">

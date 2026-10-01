@@ -8,30 +8,21 @@ use App\Core\View;
 $recent = $recent ?? [];
 $byStatus = $by_status ?? [];
 require dirname(__DIR__) . '/layout/header.php';
-
-$statusLabels = [
-    'pending_payment' => 'Pending payment',
-    'confirmed' => 'Confirmed',
-    'active' => 'Active hire',
-    'completed' => 'Completed',
-    'cancelled' => 'Cancelled',
-    'no_show' => 'No show',
-];
 ?>
 <section>
   <h1>Dashboard</h1>
 
   <div class="stat-grid">
-    <div class="stat"><span class="stat-value"><?= View::e((int) $stats['cars']) ?></span>
-      <span class="stat-label">Vehicles</span></div>
-    <div class="stat"><span class="stat-value"><?= View::e((int) $stats['clients']) ?></span>
-      <span class="stat-label">Clients</span></div>
+    <div class="stat stat-accent"><span class="stat-value">KES <?= View::e(number_format((float) $stats['outstanding'], 2)) ?></span>
+      <span class="stat-label">Outstanding balance</span></div>
+    <div class="stat stat-accent"><span class="stat-value"><?= View::e((int) $stats['pending_payments']) ?></span>
+      <span class="stat-label">Payments awaiting confirmation</span></div>
     <div class="stat"><span class="stat-value"><?= View::e((int) $stats['bookings']) ?></span>
       <span class="stat-label">Bookings</span></div>
-    <div class="stat"><span class="stat-value"><?= View::e((int) $stats['pending_payments']) ?></span>
-      <span class="stat-label">Payments awaiting confirmation</span></div>
-    <div class="stat"><span class="stat-value">KES <?= View::e(number_format((float) $stats['outstanding'], 2)) ?></span>
-      <span class="stat-label">Outstanding balance</span></div>
+    <div class="stat"><span class="stat-value"><?= View::e((int) $stats['clients']) ?></span>
+      <span class="stat-label">Clients</span></div>
+    <div class="stat"><span class="stat-value"><?= View::e((int) $stats['cars']) ?></span>
+      <span class="stat-label">Vehicles</span></div>
   </div>
 
   <h2>Bookings by status</h2>
@@ -76,8 +67,7 @@ $statusLabels = [
                   <span class="muted"><?= View::e($b['registration_plate']) ?></span></td>
               <td><?= View::e($b['pickup_date']) ?> &rarr; <?= View::e($b['return_date']) ?></td>
               <td><?= View::e(number_format((float) $b['total_amount'], 2)) ?></td>
-              <td><span class="badge badge-<?= View::e(str_replace('_', '-', (string) $b['status'])) ?>">
-                  <?= View::e(ucwords(str_replace('_', ' ', (string) $b['status']))) ?></span></td>
+              <td><?= $statusBadge((string) $b['status']) ?></td>
             </tr>
           <?php endforeach; ?>
         </tbody>

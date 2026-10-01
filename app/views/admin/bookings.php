@@ -9,15 +9,6 @@ $bookings = $bookings ?? [];
 $filter = $filter ?? null;
 $statuses = $statuses ?? [];
 require dirname(__DIR__) . '/layout/header.php';
-
-$statusLabels = [
-    'pending_payment' => 'Pending payment',
-    'confirmed' => 'Confirmed',
-    'active' => 'Active hire',
-    'completed' => 'Completed',
-    'cancelled' => 'Cancelled',
-    'no_show' => 'No show',
-];
 ?>
 <section>
   <div class="page-head">
@@ -57,8 +48,7 @@ $statusLabels = [
                   <span class="muted"><?= View::e($b['registration_plate']) ?></span></td>
               <td><?= View::e($b['pickup_date']) ?> &rarr; <?= View::e($b['return_date']) ?></td>
               <td><?= View::e(number_format((float) $b['total_amount'], 2)) ?></td>
-              <td><span class="badge badge-<?= View::e(str_replace('_', '-', (string) $b['status'])) ?>">
-                  <?= View::e(ucwords(str_replace('_', ' ', (string) $b['status']))) ?></span></td>
+              <td><?= $statusBadge((string) $b['status']) ?></td>
               <td><?= View::e($b['created_at']) ?></td>
             </tr>
           <?php endforeach; ?>

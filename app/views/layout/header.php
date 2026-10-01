@@ -17,6 +17,21 @@ $at = static fn (string $p, bool $prefix = false): string => ($prefix
     : $currentPath === $p)
     ? ' aria-current="page"'
     : '';
+
+// Shared booking-status vocabulary: filter labels, chips and badges.
+$statusLabels = [
+    'pending_payment' => 'Pending payment',
+    'confirmed' => 'Confirmed',
+    'active' => 'Active hire',
+    'completed' => 'Completed',
+    'cancelled' => 'Cancelled',
+    'no_show' => 'No show',
+];
+$statusBadge = static function (string $status) use ($statusLabels): string {
+    $label = $statusLabels[$status] ?? ucwords(str_replace('_', ' ', $status));
+    return '<span class="badge badge-' . View::e(str_replace('_', '-', $status)) . '">'
+        . View::e($label) . '</span>';
+};
 ?>
 <!DOCTYPE html>
 <html lang="en">

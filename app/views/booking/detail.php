@@ -33,8 +33,7 @@ $paymentBadge = static function (string $status): string {
     <dt>Vehicle</dt>
     <dd><?= View::e($booking['make'] . ' ' . $booking['model']) ?> (<?= View::e($booking['registration_plate']) ?>)</dd>
     <dt>Status</dt>
-    <dd><span class="badge badge-<?= View::e(str_replace('_', '-', (string) $booking['status'])) ?>">
-      <?= View::e(ucwords(str_replace('_', ' ', (string) $booking['status']))) ?></span></dd>
+    <dd><?= $statusBadge((string) $booking['status']) ?></dd>
     <dt>Pickup date</dt><dd><?= View::e($booking['pickup_date']) ?></dd>
     <dt>Return date</dt><dd><?= View::e($booking['return_date']) ?></dd>
     <?php if (!empty($booking['pickup_location'])): ?>

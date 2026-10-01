@@ -39,8 +39,7 @@ require dirname(__DIR__) . '/layout/header.php';
               <td><?= View::e($b['return_date']) ?></td>
               <td><?= View::e(number_format((float) $b['total_amount'], 2)) ?></td>
               <td><?= View::e(number_format((float) ($b['balance'] ?? 0), 2)) ?></td>
-              <td><span class="badge badge-<?= View::e(str_replace('_', '-', (string) $b['status'])) ?>">
-                  <?= View::e(ucwords(str_replace('_', ' ', (string) $b['status']))) ?></span></td>
+              <td><?= $statusBadge((string) $b['status']) ?></td>
               <td>
                 <a href="<?= View::e(url('/bookings/' . (int) $b['id'])) ?>">View</a>
                 <?php if ((float) ($b['balance'] ?? 0) > 0.01
