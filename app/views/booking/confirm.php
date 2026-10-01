@@ -11,6 +11,8 @@ $payable = $balance > 0.01
     && in_array((string) $booking['status'], PaymentService::PAYABLE_STATUSES, true);
 
 require dirname(__DIR__) . '/layout/header.php';
+$step = ($payable && Guard::hasRole('client')) ? 3 : 5;
+require dirname(__DIR__) . '/partials/steps.php';
 ?>
 <section class="print-sheet">
   <p class="alert alert-success" role="status">Your booking has been received.</p>

@@ -16,6 +16,8 @@ $err = static fn (string $f): string => isset($errors[$f])
 $val = static fn (string $f): string => View::e($old[$f] ?? '');
 
 require dirname(__DIR__) . '/layout/header.php';
+$step = 4;
+require dirname(__DIR__) . '/partials/steps.php';
 ?>
 <section class="auth-card auth-card-wide">
   <h1>Pay for <?= View::e($booking['booking_ref']) ?></h1>

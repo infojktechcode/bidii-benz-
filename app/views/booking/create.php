@@ -16,6 +16,8 @@ $err = static fn (string $f): string => isset($errors[$f])
 $val = static fn (string $f): string => View::e($old[$f] ?? '');
 
 require dirname(__DIR__) . '/layout/header.php';
+$step = 2;
+require dirname(__DIR__) . '/partials/steps.php';
 ?>
 <section>
   <p><a href="<?= View::e(url('/cars/' . (int) $car['id'])) ?>">&larr; Back to vehicle</a></p>

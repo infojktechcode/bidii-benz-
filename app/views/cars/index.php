@@ -31,12 +31,12 @@ require dirname(__DIR__) . '/layout/header.php';
           </div>
           <div class="card-body">
             <h2><?= View::e($car['make'] . ' ' . $car['model']) ?></h2>
-            <p class="muted">
-              <?= View::e($car['year'] ?? '') ?> &middot;
-              <?= View::e($car['seats']) ?> seats &middot;
-              <?= View::e($car['transmission']) ?> &middot;
-              <?= View::e($car['fuel_type']) ?>
-            </p>
+            <ul class="chip-row">
+              <li class="chip"><?= View::e($car['year'] ?? '') ?></li>
+              <li class="chip"><?= View::e($car['seats']) ?> seats</li>
+              <li class="chip"><?= View::e(ucfirst((string) $car['transmission'])) ?></li>
+              <li class="chip"><?= View::e(ucfirst((string) $car['fuel_type'])) ?></li>
+            </ul>
             <p class="price">
               KES <?= View::e(number_format((float) $car['daily_price'], 0)) ?>
               <span>/ day</span>
