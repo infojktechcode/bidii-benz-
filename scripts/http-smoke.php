@@ -677,7 +677,8 @@ check($accPage['code'] === 200 && str_contains($accPage['body'], 'My account'),
     'the account page renders', "code {$accPage['code']}");
 check(str_contains($accPage['body'], '/account/profile') && str_contains($accPage['body'], '/account/password'),
     'both the profile and password forms are present');
-check(str_contains($accPage['body'], '/account">Account</a>'), 'the header links signed-in users to the account page');
+check(str_contains($accPage['body'], '>Account</a>') && str_contains($accPage['body'], '/account'),
+    'the header links signed-in users to the account page');
 
 // Staff get the password section but never a client profile form.
 $r = req($s1, 'GET', '/account');

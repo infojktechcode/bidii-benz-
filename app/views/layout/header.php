@@ -12,11 +12,35 @@ $isAuthed = Guard::check();
 $role = Guard::role();
 
 $currentPath = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
+// Strip the deployment base path ("/bidii-benz/public") so aria-current and
+// the admin rail match application-relative paths in every environment.
+$basePath = View::basePath();
+if ($basePath !== '' && ($currentPath === $basePath || str_starts_with($currentPath, $basePath . '/'))) {
+    $currentPath = substr($currentPath, strlen($basePath)) ?: '/';
+}
 $at = static fn (string $p, bool $prefix = false): string => ($prefix
     ? str_starts_with($currentPath, $p)
     : $currentPath === $p)
     ? ' aria-current="page"'
     : '';
+
+$roleLabels = ['client' => 'Client', 'staff' => 'Staff', 'owner' => 'Owner'];
+
+// Staff/owner see the dashboard rail while inside the /admin area only;
+// public and client pages keep the plain top navigation.
+$isAdminArea = in_array($role, ['staff', 'owner'], true)
+    && ($currentPath === '/admin' || str_starts_with($currentPath, '/admin/'));
+
+$adminRailLinks = [
+    ['/admin', 'Dashboard', false],
+    ['/admin/vehicles', 'Vehicles', true],
+    ['/admin/bookings', 'Bookings', true],
+    ['/admin/clients', 'Clients', true],
+    ['/admin/payments', 'Payments', true],
+    ['/admin/reports', 'Reports', true],
+    ['/admin/audit', 'Audit Log', true],
+    ['/account', 'Account', true],
+];
 
 // Shared booking-status vocabulary: filter labels, chips and badges.
 $statusLabels = [
@@ -45,7 +69,7 @@ $statusBadge = static function (string $status) use ($statusLabels): string {
 <link rel="stylesheet" href="<?= View::e(View::url('/assets/css/app.css')) ?>">
 <script src="<?= View::e(View::url('/assets/js/app.js')) ?>" defer></script>
 </head>
-<body>
+<body<?= $isAdminArea ? ' class="has-rail"' : '' ?>>
 <a class="skip-link" href="#main-content">Skip to content</a>
 <header class="site-header">
   <div class="container header-bar">
@@ -62,7 +86,8 @@ $statusBadge = static function (string $status) use ($statusLabels): string {
           <a href="<?= View::e(View::url('/bookings')) ?>"<?= $at('/bookings', true) ?>>My bookings</a>
         <?php endif; ?>
         <a href="<?= View::e(View::url('/account')) ?>"<?= $at('/account', true) ?>>Account</a>
-        <span class="nav-user"><?= View::e((string) Session::get('user_name', '')) ?></span>
+        <span class="nav-user"><?= View::e((string) Session::get('user_name', '')) ?>
+          <span class="role-chip"><?= View::e($roleLabels[$role] ?? (string) $role) ?></span></span>
         <form method="post" action="<?= View::e(View::url('/logout')) ?>" class="nav-inline">
           <?= Csrf::field('logout') ?>
           <button type="submit" class="link-btn">Sign out</button>
@@ -74,6 +99,17 @@ $statusBadge = static function (string $status) use ($statusLabels): string {
     </nav>
   </div>
 </header>
+<?php if ($isAdminArea): ?>
+<nav class="rail" aria-label="Dashboard navigation">
+  <?php foreach ($adminRailLinks as [$railPath, $railLabel, $railPrefix]): ?>
+    <a href="<?= View::e(url($railPath)) ?>"<?= $at($railPath, $railPrefix) ?>><?= View::e($railLabel) ?></a>
+  <?php endforeach; ?>
+  <form method="post" action="<?= View::e(url('/logout')) ?>" class="rail-logout">
+    <?= Csrf::field('logout') ?>
+    <button type="submit" class="link-btn">Sign out</button>
+  </form>
+</nav>
+<?php endif; ?>
 <main id="main-content" class="container">
 <?php if ($flashSuccess !== null && $flashSuccess !== ''): ?>
   <p class="alert alert-success" role="status"><?= View::e($flashSuccess) ?></p>
