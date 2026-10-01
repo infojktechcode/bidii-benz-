@@ -880,6 +880,70 @@ $r = req($cacheJar, 'GET', '/bookings');
 check(str_contains($r['body'], 'table-wrap" tabindex="0"'),
     'client data tables are keyboard-scrollable regions', "code {$r['code']}");
 
+// ================================================== Phase 11A: dashboards
+echo '-- Phase 11A: client and admin dashboards --' . PHP_EOL;
+
+// Client login lands on the client dashboard (default landing, no intended URL).
+$landJar = jar();
+$landPage = req($landJar, 'GET', '/login');
+$landToken = csrfAny($landPage['body']);
+$r = req($landJar, 'POST', '/login', [
+    'identifier' => 'client1@bidii.test',
+    'password' => 'ClientPass123!',
+    '_csrf' => $landToken,
+]);
+check($r['code'] === 302 && str_contains((string) $r['location'], '/bookings'),
+    'client login lands on the client dashboard',
+    "code {$r['code']} loc {$r['location']}");
+
+// Populated client dashboard.
+$r = req($c1, 'GET', '/bookings');
+check($r['code'] === 200 && str_contains($r['body'], 'Welcome back'),
+    'the client dashboard greets the signed-in client', "code {$r['code']}");
+check(str_contains($r['body'], 'Upcoming bookings') && str_contains($r['body'], 'Active bookings')
+    && str_contains($r['body'], 'Completed bookings') && str_contains($r['body'], 'Outstanding balance'),
+    'the client dashboard summary cards render');
+check(str_contains($r['body'], 'aria-label="Quick actions"'),
+    'the client dashboard quick actions render');
+check(str_contains($r['body'], 'data-cards'),
+    'the client bookings table carries the responsive card layout');
+
+// Empty dashboard: the throwaway account client never booked anything.
+$r = req($acc, 'GET', '/bookings');
+check($r['code'] === 200 && str_contains($r['body'], 'You have no bookings yet'),
+    'the empty dashboard explains the situation', "code {$r['code']}");
+check(str_contains($r['body'], 'Browse the fleet') && str_contains($r['body'], 'Book a vehicle'),
+    'the empty dashboard offers fleet CTAs');
+
+// Admin dashboard: KPI grid, operational sections, rail, role chip.
+$r = req($s1, 'GET', '/admin');
+check($r['code'] === 200 && str_contains($r['body'], 'Key figures')
+    && str_contains($r['body'], 'Active rentals') && str_contains($r['body'], 'Vehicles available today')
+    && str_contains($r['body'], 'Total bookings') && str_contains($r['body'], 'Clients'),
+    'the admin KPI grid renders the verified statistics', "code {$r['code']}");
+check(str_contains($r['body'], 'Fleet availability') && str_contains($r['body'], 'Pending actions')
+    && str_contains($r['body'], 'Payment activity') && str_contains($r['body'], 'Recent bookings'),
+    'the admin operational sections render');
+check(str_contains($r['body'], 'aria-label="Dashboard navigation"'),
+    'staff see the dashboard rail');
+check(str_contains($r['body'], 'aria-current="page"'),
+    'the rail marks the current section with aria-current');
+check(str_contains($r['body'], 'role-chip'),
+    'the header shows the signed-in role chip');
+check(str_contains($r['body'], 'Add vehicle') && str_contains($r['body'], 'Audit log'),
+    'quick actions link to Add vehicle and Audit log');
+check(str_contains($r['body'], 'data-cards'),
+    'the admin dashboard tables carry the responsive card layout');
+
+// Owner gets the same rail; clients and anonymous visitors never do.
+$r = req($owner, 'GET', '/admin');
+check($r['code'] === 200 && str_contains($r['body'], 'aria-label="Dashboard navigation"'),
+    'owner sees the dashboard rail', "code {$r['code']}");
+$r = req($c1, 'GET', '/bookings');
+check(!str_contains($r['body'], 'Dashboard navigation'), 'clients never see the admin rail');
+$r = req($anon, 'GET', '/cars');
+check(!str_contains($r['body'], 'Dashboard navigation'), 'public pages carry no admin rail');
+
 // ================================================================== cleanup
 $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$staffUserId]);
 $pdo->prepare('DELETE FROM audit_logs WHERE detail LIKE ?')->execute(['%' . $email . '%']);
