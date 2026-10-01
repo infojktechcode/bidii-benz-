@@ -2,7 +2,7 @@
 
 Every requirement of the study mapped to the code, tests and HTTP checks that
 prove it. Verified at the **Phase 11A dashboard checkpoint**:
-`OK (225 tests, 1156 assertions)` + smoke **169/169** + lint 97 files clean.
+`OK (225 tests, 1156 assertions)` + smoke **170/170** + lint 97 files clean.
 
 Status legend: **COMPLETE — VERIFIED** (implemented and covered by automated
 evidence), **OUT OF SCOPE** (deliberately excluded, never a study requirement).

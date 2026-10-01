@@ -11,7 +11,7 @@ Run on the machine where the release candidate is checked out:
 
 ```
 php phpunit.phar                 # baseline: OK (225 tests, 1156 assertions)
-php scripts/http-smoke.php       # 169 checks, needs local Apache up
+php scripts/http-smoke.php       # 170 checks, needs local Apache up
 php scripts/migrate.php status   # 0 pending
 git status --short               # clean, HEAD on the intended release commit
 ```

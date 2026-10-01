@@ -66,7 +66,7 @@ The suites cannot see Apache, so run the committed smoke script against
 php scripts/http-smoke.php
 ```
 
-**169 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
+**170 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
 non-zero on any failure:
 
 - hidden paths return **403** (`.env`, `.env.example`, `.git`, `docs/`,
@@ -100,7 +100,7 @@ non-zero on any failure:
   sections/quick actions/empty-state CTAs, admin KPI grid + operational
   sections + quick actions, dashboard rail + `aria-current` + role chip for
   staff/owner, no rail for clients or anonymous visitors, responsive
-  `data-cards` tables
+  `data-cards` tables, footer contact strip links the office phone number
 
 ## Updating expectations
 
