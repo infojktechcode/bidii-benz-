@@ -539,11 +539,11 @@ input[type="datetime-local"] {
     background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
   }
   .table.data-cards td {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+    display: flex; align-items: baseline; justify-content: flex-start; gap: .75rem;
     border: 0; padding: .3rem 0; text-align: right;
   }
   .table.data-cards td::before {
-    content: attr(data-label); flex: 0 0 auto; text-align: left;
+    content: attr(data-label); flex: 0 0 auto; margin-right: auto; text-align: left;
     font-weight: 600; font-size: .78rem; letter-spacing: .04em;
     text-transform: uppercase; color: var(--muted);
   }

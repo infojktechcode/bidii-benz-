@@ -98,8 +98,8 @@ require dirname(__DIR__) . '/layout/header.php';
           <?php foreach ($bookings as $b): ?>
             <tr>
               <td data-label="Reference"><?= View::e($b['booking_ref']) ?></td>
-              <td data-label="Vehicle"><?= View::e($b['make'] . ' ' . $b['model']) ?><br>
-                  <span class="muted"><?= View::e($b['registration_plate']) ?></span></td>
+              <td data-label="Vehicle"><span><?= View::e($b['make'] . ' ' . $b['model']) ?><br>
+                  <span class="muted"><?= View::e($b['registration_plate']) ?></span></span></td>
               <td data-label="Pickup"><?= View::e($b['pickup_date']) ?></td>
               <td data-label="Return"><?= View::e($b['return_date']) ?></td>
               <td data-label="Total">KES <?= View::e(number_format((float) $b['total_amount'], 2)) ?></td>

@@ -68,17 +68,41 @@ final class AdminController
     public function dashboard(array $params = []): void
     {
         $byStatus = $this->bookings->countByStatus();
+
+        $recent = $this->bookings->findAll(null, 10);
+        foreach ($recent as $i => $row) {
+            $recent[$i]['balance'] = $this->bookingService->getBookingBalance((int) $row['id']);
+        }
+
+        // Available today: active, non-deleted vehicles with no booking_days
+        // row for the current date. Derived from existing repository methods
+        // only — no new SQL, no availability-logic change.
+        $today = date('Y-m-d');
+        $occupied = $this->cars->occupiedUntil($today);
+        $fleet = $this->cars->findActive();
+        $availableToday = 0;
+        foreach ($fleet as $car) {
+            if (!isset($occupied[(int) $car['id']])) {
+                $availableToday++;
+            }
+        }
+
         View::render('admin/dashboard', [
             'title' => 'Dashboard — Bidii Benz Rentals',
             'stats' => [
-                'cars' => $this->cars->countAll(),
-                'clients' => $this->users->countClients(),
-                'bookings' => $this->bookings->countAll(),
-                'pending_payments' => $this->payments->countAll('pending'),
                 'outstanding' => $this->bookings->outstandingBalance(),
+                'pending_payments' => $this->payments->countAll('pending'),
+                'active_rentals' => $this->bookings->countAll('active'),
+                'available_today' => $availableToday,
+                'fleet_active' => count($fleet),
+                'bookings' => $this->bookings->countAll(),
+                'clients' => $this->users->countClients(),
+                'pending_bookings' => $this->bookings->countAll('pending_payment'),
             ],
             'by_status' => $byStatus,
-            'recent' => $this->bookings->findAll(null, 10),
+            'recent' => $recent,
+            'recent_payments' => $this->payments->findAll(null, 10),
+            'today' => $today,
         ]);
     }
 
