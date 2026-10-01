@@ -261,7 +261,18 @@ input:focus-visible { border-color: var(--accent); }
 }
 
 @media print {
+  /* Receipt/report polish: dark theme prints as clean black-on-white. */
   .print-sheet .btn-row, .print-sheet a.btn { display: none; }
+  .steps, [data-nav-toggle], .filter-nav { display: none !important; }
+  .card, .print-sheet, .info-panel, .spec-list, .stat {
+    background: #fff !important; border-color: #bbb !important; box-shadow: none !important; color: #111 !important; }
+  .muted, .stat-label, .footer-note, .footer-heading, .spec-list dt, th, .prose { color: #444 !important; }
+  .badge { background: #fff !important; color: #111 !important; border-color: #999 !important; }
+  .table thead th { background: #eee !important; color: #333 !important; }
+  .table tbody tr:nth-child(even) { background: #fff !important; }
+  .price, .price span, .stat-value, h1, h2, strong { color: #111 !important; }
+  h1, h2 { page-break-after: avoid; }
+  tr, .stat, .card, .print-sheet { page-break-inside: avoid; }
 }
 
 /* --- Phase 8: tablet breakpoint + feedback --- */

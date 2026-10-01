@@ -9,6 +9,7 @@ use App\Core\View;
 use App\Repositories\CarRepository;
 use App\Core\Database;
 use App\Core\Input;
+use App\Services\PhotoStorage;
 
 /**
  * Vehicle browsing for clients.
@@ -51,7 +52,10 @@ final class CarController
         }
 
         $dir = (string) $this->config->get('uploads.dir') . DIRECTORY_SEPARATOR . 'cars';
-        $path = $dir . DIRECTORY_SEPARATOR . basename($car['image_path']);
+        $original = $dir . DIRECTORY_SEPARATOR . basename($car['image_path']);
+        // Serve the generated 800px derivative when present; fall back to the original.
+        $thumb = $dir . DIRECTORY_SEPARATOR . PhotoStorage::thumbName(basename($car['image_path']));
+        $path = is_file($thumb) ? $thumb : $original;
         if (!is_file($path)) {
             http_response_code(404);
             exit;

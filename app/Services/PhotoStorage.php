@@ -92,11 +92,57 @@ final class PhotoStorage
             return ['ok' => false, 'error' => 'The photo could not be saved.'];
         }
         @chmod($destination, 0644);
+        $this->createThumbnail($destination);
 
         return ['ok' => true, 'filename' => $filename];
     }
 
-    /** Remove a previously stored photo. Silently ignores missing files. */
+    /** Derivative filename for a stored photo (`photo.thumb.jpg`). */
+    public static function thumbName(string $filename): string
+    {
+        return pathinfo($filename, PATHINFO_FILENAME) . '.thumb.jpg';
+    }
+
+    /**
+     * Best-effort 800px-wide JPEG derivative next to the original.
+     * Requires GD; silently skipped when the extension is unavailable,
+     * in which case the original is served instead.
+     */
+    public function createThumbnail(string $sourcePath): bool
+    {
+        if (!function_exists('imagecreatefromstring') || !is_file($sourcePath)) {
+            return false;
+        }
+        $raw = @file_get_contents($sourcePath);
+        $source = $raw === '' ? false : @imagecreatefromstring($raw);
+        if ($source === false) {
+            return false;
+        }
+        $width = imagesx($source);
+        $height = imagesy($source);
+        if ($width < 1 || $height < 1) {
+            imagedestroy($source);
+            return false;
+        }
+        if ($width <= 800) {
+            imagedestroy($source);
+            return false; // already small enough to serve directly
+        }
+        $newHeight = max(1, (int) round($height * (800 / $width)));
+        $thumb = imagecreatetruecolor(800, $newHeight);
+        $bg = imagecolorallocate($thumb, 255, 255, 255);
+        imagefill($thumb, 0, 0, $bg);
+        imagecopyresampled($thumb, $source, 0, 0, 0, 0, 800, $newHeight, $width, $height);
+        imagedestroy($source);
+        $ok = @imagejpeg($thumb, $this->baseDir . DIRECTORY_SEPARATOR . self::thumbName(basename($sourcePath)), 82);
+        imagedestroy($thumb);
+        if ($ok) {
+            @chmod($this->baseDir . DIRECTORY_SEPARATOR . self::thumbName(basename($sourcePath)), 0644);
+        }
+        return (bool) $ok;
+    }
+
+    /** Remove a previously stored photo (and its derivative). Missing files are ignored. */
     public function delete(?string $filename): void
     {
         if ($filename === null || $filename === '') {
@@ -105,6 +151,10 @@ final class PhotoStorage
         $path = $this->baseDir . DIRECTORY_SEPARATOR . basename($filename);
         if (is_file($path)) {
             @unlink($path);
+        }
+        $thumb = $this->baseDir . DIRECTORY_SEPARATOR . self::thumbName(basename($filename));
+        if (is_file($thumb)) {
+            @unlink($thumb);
         }
     }
 }

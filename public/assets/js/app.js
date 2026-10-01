@@ -17,16 +17,30 @@
       event.preventDefault();
       return;
     }
-    // File uploads POST without any page activity for seconds; give feedback
-    // so the button does not look dead. Page-based flow: a failed validation
-    // lands on a fresh page with the button restored.
-    if (form.querySelector('input[type="file"]')) {
-      var button = form.querySelector('button[type="submit"]:not([disabled])');
-      if (button) {
-        button.disabled = true;
+    // Lock every submit button for this navigation: double-clicks, impatient
+    // re-clicks and the back button can no longer replay a POST. File uploads
+    // also swap the label so the button does not look dead during a long
+    // multipart POST. Page-based flow: a failed validation lands on a fresh
+    // page with the buttons restored.
+    var buttons = form.querySelectorAll('button[type="submit"]:not([disabled])');
+    var isUpload = !!form.querySelector('input[type="file"]');
+    Array.prototype.forEach.call(buttons, function (button, index) {
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      if (isUpload && index === 0) {
         button.textContent = 'Working…';
       }
-    }
+    });
+  });
+
+  // Restore buttons when the page returns from the back/forward cache
+  // (the DOM snapshot would otherwise keep them disabled).
+  window.addEventListener('pageshow', function () {
+    var buttons = document.querySelectorAll('button[type="submit"][disabled]');
+    Array.prototype.forEach.call(buttons, function (button) {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+    });
   });
 
   document.addEventListener('click', function (event) {
