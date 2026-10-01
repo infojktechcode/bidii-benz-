@@ -10,7 +10,7 @@ rotation. Local XAMPP development never needs this file.
 Run on the machine where the release candidate is checked out:
 
 ```
-php phpunit.phar                 # baseline: OK (225 tests, 1156 assertions)
+php phpunit.phar                 # baseline: OK (229 tests, 1167 assertions)
 php scripts/http-smoke.php       # 170 checks, needs local Apache up
 php scripts/migrate.php status   # 0 pending
 git status --short               # clean, HEAD on the intended release commit
@@ -158,6 +158,7 @@ Rotate on schedule and **whenever a credential may have been exposed**:
 - One failed login and one successful login appear in `/admin/audit`.
 - `storage/logs/` shows no new errors after a few minutes of traffic.
 - `php scripts/backup.php` succeeds once from the server's CLI.
+- `php scripts/prune.php --dry-run` succeeds once from the server's CLI.
 
 ## 11. Rollback
 
@@ -168,3 +169,18 @@ Rotate on schedule and **whenever a credential may have been exposed**:
   taken before the deploy — that is why §7 scheduling is mandatory.
 - **Bad data**: restore from the most recent good dump (destructive for
   everything written after it — check the timestamp first).
+
+## 12. Scheduled maintenance
+
+- **Audit retention** — owner policy keeps `audit_logs` rows for 12 months
+  (`AUDIT_RETENTION_MONTHS`, Kenya DPA storage limitation), then removes
+  them. Schedule the pruner daily:
+
+  ```
+  # Linux/cron (03:20)
+  20 3 * * * php /var/www/bidii-benz/scripts/prune.php >> /var/www/bidii-benz/storage/logs/prune.log 2>&1
+  ```
+
+  Windows Task Scheduler: run `php C:\path\to\bidii-benz\scripts\prune.php`
+  daily. `--dry-run` previews without deleting; `--months=N` overrides the
+  window for one run. A run with nothing to delete is a no-op.

@@ -52,4 +52,15 @@ final class ConfigTest extends TestCase
         $config = Config::load(__DIR__ . '/no-such-dir');
         self::assertIsString($config->get('db.pass'));
     }
+
+    public function testAuditRetentionDefaultsToTwelveMonths(): void
+    {
+        $config = Config::load(__DIR__ . '/no-such-dir');
+        self::assertSame(12, $config->get('audit.retention_months'));
+
+        $config = Config::load(__DIR__ . '/no-such-dir', [
+            'audit' => ['retention_months' => 3],
+        ]);
+        self::assertSame(3, $config->get('audit.retention_months'));
+    }
 }

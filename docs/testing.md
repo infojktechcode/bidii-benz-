@@ -8,7 +8,7 @@ php phpunit.phar --filter Name    # by class/method name
 php phpunit.phar --testsuite unit # suites (lowercase): unit | integration
 ```
 
-Current baseline: **`OK (225 tests, 1156 assertions)`** (PHP 8.3.33,
+Current baseline: **`OK (229 tests, 1167 assertions)`** (PHP 8.3.33,
 PHPUnit 10.5.65, bundled `phpunit.phar` — no Composer install needed).
 
 Integration tests open the real database and **skip themselves** with
@@ -35,7 +35,7 @@ tests/
                              ReturnWorkflow, ReportSummary, AuditTrail,
                               SessionRevalidation, ClientDirectory,
                               FleetAvailability, AccountSelfService,
-                              Dashboard
+                              Dashboard, AuditRetention
 ```
 
 ## What the suites lock down
@@ -55,6 +55,7 @@ tests/
 | Clients | Directory lists every client with totals, profile resolves, unknown id → null (404) |
 | Availability | The listing badge reads `booking_days` (same source as `isAvailable`): free car absent, booking reports its return date, cancelling releases it |
 | Dashboards | Outstanding balance subtracts **every** confirmed payment across non-cancelled bookings, KPI counters track live state, "available today" equals active fleet minus occupied, inactive/deleted vehicles never count (`DashboardTest`) |
+| Audit retention | Rows older than the 12-month window are pruned, the dry-run count reports without deleting, young-only tables are no-ops (`AuditRetentionTest`); config defaults to 12 months (`ConfigTest`) |
 | CSP policy | The production CSP declares no `unsafe-inline`/`unsafe-eval`, and no view emits inline `on*=` handlers, `style=""` attributes, `<style>` blocks or src-less `<script>` — the production header can stay strict (`CspPolicyTest`) |
 
 ## Live HTTP checks

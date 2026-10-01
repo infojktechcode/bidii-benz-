@@ -85,6 +85,29 @@ final class AuditRepository
     }
 
     /**
+     * Rows created strictly before $createdBefore (Y-m-d H:i:s) — the
+     * retention window reported by a --dry-run before anything is deleted.
+     */
+    public function countBefore(string $createdBefore): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM audit_logs WHERE created_at < ?');
+        $stmt->execute([$createdBefore]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Delete rows created strictly before $createdBefore (Y-m-d H:i:s);
+     * returns the number removed. Enforces the owner-approved retention
+     * window (AUDIT_RETENTION_MONTHS) via scripts/prune.php.
+     */
+    public function pruneBefore(string $createdBefore): int
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM audit_logs WHERE created_at < ?');
+        $stmt->execute([$createdBefore]);
+        return $stmt->rowCount();
+    }
+
+    /**
      * @return array{0: string, 1: list<mixed>}
      */
     private function filter(?string $action, ?int $userId): array

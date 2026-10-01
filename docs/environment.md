@@ -71,3 +71,9 @@ is HTTPS. The session name is fixed (`bidii_sess`).
 Logs are written to `storage/logs/` (outside `public/`, deny-all via
 `.htaccess`). Application errors, refused callbacks and audit-write failures
 are logged; passwords and tokens are never written.
+
+## Audit retention
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `AUDIT_RETENTION_MONTHS` | `12` | Months `audit_logs` rows are kept (owner policy, Kenya DPA storage limitation). `scripts/prune.php` deletes older rows — schedule it per [deploy.md](deploy.md) §12. |

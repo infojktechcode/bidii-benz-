@@ -60,7 +60,7 @@ app/
   views/         PHP templates (layout/, admin/, booking/, payment/, ...)
 database/
   migrations/    one statement per file, tracked in schema_migrations
-scripts/         migrate.php, seed.php, backup.php (CLI only, deny-all via .htaccess)
+scripts/         migrate.php, seed.php, backup.php, prune.php (CLI only, deny-all via .htaccess)
 storage/         uploads + logs (deny-all via .htaccess)
 tests/           Unit/ (no DB) and Integration/ (real DB, skip if down)
 docs/            the documents listed above
@@ -74,6 +74,7 @@ php scripts/migrate.php status   # applied / pending
 php scripts/seed.php --force     # reseed synthetic demo data
 php scripts/backup.php           # dump the database into storage/backups/
 php scripts/backup.php --list    # show existing dumps
+php scripts/prune.php            # prune audit logs older than 12 months (--dry-run to preview)
 php phpunit.phar                 # full test suite
 php phpunit.phar --filter Name   # one test/class
 php scripts/http-smoke.php       # live HTTP end-to-end checks (Apache up)

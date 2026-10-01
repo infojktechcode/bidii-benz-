@@ -2,7 +2,7 @@
 
 Every requirement of the study mapped to the code, tests and HTTP checks that
 prove it. Verified at the **Phase 11A dashboard checkpoint**:
-`OK (225 tests, 1156 assertions)` + smoke **170/170** + lint 97 files clean.
+`OK (229 tests, 1167 assertions)` + smoke **170/170** + lint 98 files clean.
 
 Status legend: **COMPLETE — VERIFIED** (implemented and covered by automated
 evidence), **OUT OF SCOPE** (deliberately excluded, never a study requirement).
@@ -95,5 +95,7 @@ evidence), **OUT OF SCOPE** (deliberately excluded, never a study requirement).
   blocked additionally by no mail channel + change-approval rules.
 - **Email/SMS notifications, rental extension, `no_show` status** — not
   requested in any phase.
-- **`audit_logs` retention** — pending owner policy decision (Kenya DPA);
-  `login_attempts` already pruned inside the 900 s window.
+- **`audit_logs` retention** — RESOLVED (Phase 12): owner approved **12
+  months** (Kenya DPA); enforced by `scripts/prune.php` with
+  `AUDIT_RETENTION_MONTHS` as the policy knob. `login_attempts` already
+  pruned inside the 900 s window.

@@ -65,6 +65,9 @@ final class Config
                 'callback_url' => $get('MPESA_CALLBACK_URL', ''),
                 'callback_secret' => $get('MPESA_CALLBACK_SECRET', ''),
             ],
+            'audit' => [
+                'retention_months' => (int) $get('AUDIT_RETENTION_MONTHS', '12'),
+            ],
             'logs_dir' => $projectRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs',
         ];
 

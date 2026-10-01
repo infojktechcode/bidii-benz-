@@ -140,8 +140,10 @@ audit row's own role.
 ## Data protection
 
 Client PII (national ID, phone, address) is stored — Kenya DPA 2019 applies.
-The statutory notice is served at `/privacy`. A retention policy for bookings,
-payments and audit rows is required before go-live (not yet implemented).
+The statutory notice is served at `/privacy`. Audit rows now carry a retention
+policy (**12 months**, owner decision, pruned by `scripts/prune.php` — see
+below); a retention window for bookings and payments is still required before
+go-live.
 
 ## Known, accepted gaps (deferred)
 
@@ -151,7 +153,6 @@ payments and audit rows is required before go-live (not yet implemented).
 | `no_show` status unreachable | Reserved in the schema; no workflow yet. |
 | Live Daraja integration | Refused rather than faked (see payments). |
 | Payment-initiation throttle is session-scoped | Acceptable while payments are mock/manual; re-harden (IP/DB counter) before live activation. |
-| `audit_logs` retention | Policy decision outstanding (Kenya DPA); `login_attempts` rows older than the 900 s window are already pruned on every sign-in attempt. |
 
 Resolved in Phase 8 (kept for the record): the HTTPS redirect no longer trusts
 `HTTP_HOST` (now pinned to `APP_URL`), and refunds moved from `staff` to
@@ -167,3 +168,10 @@ Resolved in Phase 11: the cache policy no longer depends on the php.ini
 default (`session_cache_limiter('nocache')` pinned in code — SEC-17), and
 `POST /register` now carries the same session-scoped attempt cap as password
 change (SEC-18).
+
+Resolved in Phase 12: `audit_logs` retention is an owner-approved **12
+months** (Kenya DPA s.25 storage limitation), enforced by
+`php scripts/prune.php` (scheduled per deploy.md §12) with a `--dry-run`
+preview and `AUDIT_RETENTION_MONTHS` as the policy knob. `login_attempts`
+rows older than the 900 s window were already pruned on every sign-in
+attempt.
