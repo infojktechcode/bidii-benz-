@@ -943,6 +943,9 @@ $r = req($c1, 'GET', '/bookings');
 check(!str_contains($r['body'], 'Dashboard navigation'), 'clients never see the admin rail');
 $r = req($anon, 'GET', '/cars');
 check(!str_contains($r['body'], 'Dashboard navigation'), 'public pages carry no admin rail');
+$r = req($anon, 'GET', '/');
+check(str_contains($r['body'], 'href="tel:+254742891423"'),
+    'the footer contact strip links the office phone number');
 
 // ================================================================== cleanup
 $pdo->prepare('DELETE FROM audit_logs WHERE user_id = ?')->execute([$staffUserId]);

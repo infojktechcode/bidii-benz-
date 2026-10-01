@@ -23,6 +23,7 @@
     <div>
       <h2 class="footer-heading">Visit us</h2>
       <ul class="footer-links">
+        <li><a href="tel:+254742891423">+254 742 891 423</a></li>
         <li>Kitengela, Kajiado County</li>
         <li>M-Pesa accepted</li>
         <li>Book online any time</li>
