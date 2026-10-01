@@ -11,7 +11,10 @@ $errors = $errors ?? [];
 $old = $old ?? [];
 
 $err = static fn (string $f): string => isset($errors[$f])
-    ? '<span class="field-error">' . View::e($errors[$f]) . '</span>'
+    ? '<span class="field-error" id="' . $f . '-error">' . View::e($errors[$f]) . '</span>'
+    : '';
+$eattr = static fn (string $f): string => isset($errors[$f])
+    ? ' aria-invalid="true" aria-describedby="' . $f . '-error"'
     : '';
 $val = static fn (string $f): string => View::e($old[$f] ?? '');
 
@@ -38,11 +41,11 @@ require dirname(__DIR__) . '/partials/steps.php';
     <label for="phone">M-Pesa phone number</label>
     <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel"
            maxlength="20" required placeholder="07XXXXXXXX"
-           value="<?= $val('phone') ?>">
+           value="<?= $val('phone') ?>"<?= $eattr('phone') ?>>
     <?= $err('phone') ?>
 
     <label for="method">Payment method</label>
-    <select id="method" name="method" required>
+    <select id="method" name="method" required<?= $eattr('method') ?>>
       <option value="mpesa"<?= $val('method') === 'mpesa' ? ' selected' : '' ?>>M-Pesa (STK push)</option>
       <option value="cash"<?= $val('method') === 'cash' ? ' selected' : '' ?>>Cash at the office</option>
       <option value="bank_transfer"<?= $val('method') === 'bank_transfer' ? ' selected' : '' ?>>Bank transfer</option>

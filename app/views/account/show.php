@@ -13,10 +13,16 @@ $profileOld = $profileOld ?? [];
 $passwordErrors = $passwordErrors ?? [];
 
 $err = static fn (string $f): string => isset($profileErrors[$f])
-    ? '<span class="field-error">' . View::e($profileErrors[$f]) . '</span>'
+    ? '<span class="field-error" id="' . $f . '-error">' . View::e($profileErrors[$f]) . '</span>'
+    : '';
+$eattr = static fn (string $f): string => isset($profileErrors[$f])
+    ? ' aria-invalid="true" aria-describedby="' . $f . '-error"'
     : '';
 $perr = static fn (string $f): string => isset($passwordErrors[$f])
-    ? '<span class="field-error">' . View::e($passwordErrors[$f]) . '</span>'
+    ? '<span class="field-error" id="' . $f . '-error">' . View::e($passwordErrors[$f]) . '</span>'
+    : '';
+$peattr = static fn (string $f): string => isset($passwordErrors[$f])
+    ? ' aria-invalid="true" aria-describedby="' . $f . '-error"'
     : '';
 $val = static fn (string $f, string $default = ''): string => View::e((string) ($profileOld[$f] ?? $default));
 
@@ -43,19 +49,19 @@ require dirname(__DIR__) . '/layout/header.php';
       <label for="full_name">Full name</label>
       <input id="full_name" name="full_name" type="text" autocomplete="name"
              minlength="3" maxlength="120" required
-             value="<?= $val('full_name', (string) $profile['full_name']) ?>">
+             value="<?= $val('full_name', (string) $profile['full_name']) ?>"<?= $eattr('full_name') ?>>
       <?= $err('full_name') ?>
 
       <label for="phone">Phone number</label>
       <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel"
              maxlength="20" required placeholder="07XXXXXXXX"
-             value="<?= $val('phone', (string) $profile['phone']) ?>">
+             value="<?= $val('phone', (string) $profile['phone']) ?>"<?= $eattr('phone') ?>>
       <?= $err('phone') ?>
 
       <label for="city">City</label>
       <input id="city" name="city" type="text" autocomplete="address-level2"
              maxlength="80"
-             value="<?= $val('city', (string) ($profile['city'] ?? '')) ?>">
+             value="<?= $val('city', (string) ($profile['city'] ?? '')) ?>"<?= $eattr('city') ?>>
       <?= $err('city') ?>
 
       <button class="btn btn-block" type="submit">Save profile</button>
@@ -76,17 +82,17 @@ require dirname(__DIR__) . '/layout/header.php';
 
     <label for="current_password">Current password</label>
     <input id="current_password" name="current_password" type="password"
-           autocomplete="current-password" required>
+           autocomplete="current-password" required<?= $peattr('current_password') ?>>
     <?= $perr('current_password') ?>
 
     <label for="password">New password</label>
     <input id="password" name="password" type="password"
-           autocomplete="new-password" minlength="8" required>
+           autocomplete="new-password" minlength="8" required<?= $peattr('password') ?>>
     <?= $perr('password') ?>
 
     <label for="confirm_password">Confirm new password</label>
     <input id="confirm_password" name="confirm_password" type="password"
-           autocomplete="new-password" minlength="8" required>
+           autocomplete="new-password" minlength="8" required<?= $peattr('confirm_password') ?>>
     <?= $perr('confirm_password') ?>
 
     <button class="btn btn-block" type="submit">Change password</button>

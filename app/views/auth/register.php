@@ -10,7 +10,10 @@ $errors = $errors ?? [];
 $old = $old ?? [];
 
 $err = static fn (string $f): string => isset($errors[$f])
-    ? '<span class="field-error">' . View::e($errors[$f]) . '</span>'
+    ? '<span class="field-error" id="' . $f . '-error">' . View::e($errors[$f]) . '</span>'
+    : '';
+$eattr = static fn (string $f): string => isset($errors[$f])
+    ? ' aria-invalid="true" aria-describedby="' . $f . '-error"'
     : '';
 $val = static fn (string $f): string => View::e($old[$f] ?? '');
 
@@ -33,38 +36,38 @@ require dirname(__DIR__) . '/layout/header.php';
 
     <label for="full_name">Full name</label>
     <input id="full_name" name="full_name" type="text" autocomplete="name"
-           maxlength="120" required value="<?= $val('full_name') ?>">
+           maxlength="120" required value="<?= $val('full_name') ?>"<?= $eattr('full_name') ?>>
     <?= $err('full_name') ?>
 
     <label for="email">Email address</label>
     <input id="email" name="email" type="email" inputmode="email"
-           autocomplete="email" maxlength="190" required value="<?= $val('email') ?>">
+           autocomplete="email" maxlength="190" required value="<?= $val('email') ?>"<?= $eattr('email') ?>>
     <?= $err('email') ?>
 
     <label for="phone">Mobile number (M-Pesa)</label>
     <input id="phone" name="phone" type="tel" inputmode="tel"
            autocomplete="tel" maxlength="20" required value="<?= $val('phone') ?>"
-           placeholder="07XXXXXXXX">
+           placeholder="07XXXXXXXX"<?= $eattr('phone') ?>>
     <?= $err('phone') ?>
 
     <label for="id_number">National ID number</label>
     <input id="id_number" name="id_number" type="text" inputmode="numeric"
-           maxlength="20" required value="<?= $val('id_number') ?>">
+           maxlength="20" required value="<?= $val('id_number') ?>"<?= $eattr('id_number') ?>>
     <?= $err('id_number') ?>
 
     <label for="city">Town / area <span class="optional">(optional)</span></label>
     <input id="city" name="city" type="text" maxlength="80"
-           value="<?= $val('city') ?>" placeholder="Kitengela">
+           value="<?= $val('city') ?>" placeholder="Kitengela"<?= $eattr('city') ?>>
     <?= $err('city') ?>
 
     <label for="password">Password</label>
     <input id="password" name="password" type="password"
-           autocomplete="new-password" maxlength="72" required>
+           autocomplete="new-password" maxlength="72" required<?= $eattr('password') ?>>
     <?= $err('password') ?>
 
     <label for="confirm_password">Confirm password</label>
     <input id="confirm_password" name="confirm_password" type="password"
-           autocomplete="new-password" maxlength="72" required>
+           autocomplete="new-password" maxlength="72" required<?= $eattr('confirm_password') ?>>
     <?= $err('confirm_password') ?>
 
     <button class="btn btn-block" type="submit">Create account</button>

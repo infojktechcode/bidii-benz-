@@ -43,7 +43,7 @@ $qs = static function (int $p) use ($filterAction, $filterUser): string {
     </p>
   </div>
 
-  <form method="get" action="<?= View::e(url('/admin/audit')) ?>" class="filter-form">
+  <form method="get" action="<?= View::e(url('/admin/audit')) ?>" class="filter-form" role="search" aria-label="Filter audit entries">
     <div class="filter-fields">
       <div>
         <label for="audit-action">Action</label>

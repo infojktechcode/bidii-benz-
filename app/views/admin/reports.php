@@ -34,7 +34,7 @@ if ($from !== null || $to !== null) {
     </nav>
   </div>
 
-  <form method="get" action="<?= View::e(url('/admin/reports')) ?>" class="filter-form">
+  <form method="get" action="<?= View::e(url('/admin/reports')) ?>" class="filter-form" role="search" aria-label="Choose report date range">
     <div class="filter-fields">
       <div>
         <label for="from">From</label>

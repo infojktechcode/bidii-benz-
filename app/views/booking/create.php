@@ -11,7 +11,10 @@ $errors = $errors ?? [];
 $old = $old ?? [];
 
 $err = static fn (string $f): string => isset($errors[$f])
-    ? '<span class="field-error">' . View::e($errors[$f]) . '</span>'
+    ? '<span class="field-error" id="' . $f . '-error">' . View::e($errors[$f]) . '</span>'
+    : '';
+$eattr = static fn (string $f): string => isset($errors[$f])
+    ? ' aria-invalid="true" aria-describedby="' . $f . '-error"'
     : '';
 $val = static fn (string $f): string => View::e($old[$f] ?? '');
 
@@ -37,22 +40,22 @@ require dirname(__DIR__) . '/partials/steps.php';
     <label for="pickup_date">Pickup date</label>
     <input id="pickup_date" name="pickup_date" type="date"
            min="<?= View::e($min_date) ?>" max="<?= View::e($max_date) ?>"
-           required value="<?= $val('pickup_date') ?>">
+           required value="<?= $val('pickup_date') ?>"<?= $eattr('pickup_date') ?>>
     <?= $err('pickup_date') ?>
 
     <label for="return_date">Return date</label>
     <input id="return_date" name="return_date" type="date"
            min="<?= View::e($min_date) ?>" max="<?= View::e($max_date) ?>"
-           required value="<?= $val('return_date') ?>">
+           required value="<?= $val('return_date') ?>"<?= $eattr('return_date') ?>>
     <?= $err('return_date') ?>
 
     <label for="pickup_location">Pickup location <span class="optional">(optional)</span></label>
     <input id="pickup_location" name="pickup_location" type="text" maxlength="120"
-           placeholder="Kitengela office" value="<?= $val('pickup_location') ?>">
+           placeholder="Kitengela office" value="<?= $val('pickup_location') ?>"<?= $eattr('pickup_location') ?>>
     <?= $err('pickup_location') ?>
 
     <label for="notes">Notes <span class="optional">(optional)</span></label>
-    <textarea id="notes" name="notes" rows="3" maxlength="500"><?= $val('notes') ?></textarea>
+    <textarea id="notes" name="notes" rows="3" maxlength="500"<?= $eattr('notes') ?>><?= $val('notes') ?></textarea>
     <?= $err('notes') ?>
 
     <button class="btn btn-block" type="submit">Continue to confirmation</button>
