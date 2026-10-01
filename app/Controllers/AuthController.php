@@ -80,12 +80,14 @@ final class AuthController
         $this->establishSession($user);
         $this->audit((int) $user['id'], 'auth.login', $ip, 'role=' . $user['role']);
 
-        $intended = Session::pull('intended', '/');
+        $intended = Session::pull('intended', null);
         // Must be a single-slash application path; "//host" would be an
         // open redirect once the base path is empty (production).
         if (!is_string($intended) || $intended === ''
             || $intended[0] !== '/' || str_starts_with($intended, '//')) {
-            $intended = '/';
+            // No remembered destination: clients land on their dashboard,
+            // staff/owner on the public homepage.
+            $intended = $user['role'] === 'client' ? '/bookings' : '/';
         }
         redirect($intended);
     }

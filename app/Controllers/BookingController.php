@@ -220,9 +220,41 @@ final class BookingController
             $withBalances[] = array_merge($b, ['balance' => $balance]);
         }
 
+        // Dashboard summary + spotlight, derived purely from the rows above:
+        // no new queries, no new fields.
+        $today = date('Y-m-d');
+        $summary = ['upcoming' => 0, 'active' => 0, 'completed' => 0, 'outstanding' => 0.0];
+        $spotlight = null; // ['kind' => 0 active|1 upcoming, 'pickup' => string, 'row' => array]
+        foreach ($withBalances as $b) {
+            $status = (string) $b['status'];
+            $summary['outstanding'] += (float) $b['balance'];
+            $pickup = (string) $b['pickup_date'];
+            if ($status === 'active') {
+                $summary['active']++;
+                $candidate = ['kind' => 0, 'pickup' => $pickup, 'row' => $b];
+                if ($spotlight === null || $candidate['kind'] < $spotlight['kind']
+                    || ($candidate['kind'] === $spotlight['kind'] && $candidate['pickup'] < $spotlight['pickup'])) {
+                    $spotlight = $candidate;
+                }
+            } elseif ($status === 'completed') {
+                $summary['completed']++;
+            } elseif (in_array($status, ['pending_payment', 'confirmed'], true)
+                && (string) $b['return_date'] >= $today) {
+                $summary['upcoming']++;
+                $candidate = ['kind' => 1, 'pickup' => $pickup, 'row' => $b];
+                if ($spotlight === null || $candidate['kind'] < $spotlight['kind']
+                    || ($candidate['kind'] === $spotlight['kind'] && $candidate['pickup'] < $spotlight['pickup'])) {
+                    $spotlight = $candidate;
+                }
+            }
+        }
+        $summary['outstanding'] = round($summary['outstanding'], 2);
+
         View::render('booking/history', [
             'title' => 'My Bookings — Bidii Benz Rentals',
             'bookings' => $withBalances,
+            'summary' => $summary,
+            'spotlight' => $spotlight['row'] ?? null,
         ]);
     }
 
