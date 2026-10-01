@@ -8,11 +8,14 @@ php phpunit.phar --filter Name    # by class/method name
 php phpunit.phar --testsuite unit # suites (lowercase): unit | integration
 ```
 
-Current baseline: **`OK (215 tests, 1127 assertions)`** (PHP 8.3.33,
+Current baseline: **`OK (221 tests, 1135 assertions)`** (PHP 8.3.33,
 PHPUnit 10.5.65, bundled `phpunit.phar` — no Composer install needed).
 
 Integration tests open the real database and **skip themselves** with
 `MySQL not available.` when it is unreachable; unit tests never need MySQL.
+Two `PhotoStorage` thumbnail tests skip on runtimes without the GD
+extension and run under any build with `ext/gd` (XAMPP's Apache PHP
+ships GD).
 
 ## Layout
 
@@ -24,8 +27,9 @@ tests/
                              throw-away client + vehicle per test, removed in
                              tearDown so tests never touch seeded rows
   Unit/                      no database: Config, Env, Router, Csrf, Input,
-                             Guard, RouteGuard, RouteTarget, Auth (service),
-                             RateLimiter, ReportRange, CspPolicy
+                              Guard, RouteGuard, RouteTarget, Auth (service),
+                              RateLimiter, ReportRange, CspPolicy,
+                              PhotoStorage
   Integration/               real database: Schema, AuthFlow, BookingFlow,
                              BookingConcurrency, PaymentFlow, CancellationAuth,
                              ReturnWorkflow, ReportSummary, AuditTrail,
@@ -60,7 +64,7 @@ The suites cannot see Apache, so run the committed smoke script against
 php scripts/http-smoke.php
 ```
 
-**147 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
+**152 checks**, PHP `curl`, throw-away rows with explicit cleanup, exits
 non-zero on any failure:
 
 - hidden paths return **403** (`.env`, `.env.example`, `.git`, `docs/`,

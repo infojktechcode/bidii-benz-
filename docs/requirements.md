@@ -1,8 +1,8 @@
 # Requirements — implementation traceability
 
 Every requirement of the study mapped to the code, tests and HTTP checks that
-prove it. Verified at the **Phase 11 final checkpoint**:
-`OK (215 tests, 1127 assertions)` + smoke **147/147** + lint 94 files clean.
+prove it. Verified at the **Phase 11 UI/UX checkpoint**:
+`OK (221 tests, 1135 assertions)` + smoke **152/152** + lint 96 files clean.
 
 Status legend: **COMPLETE — VERIFIED** (implemented and covered by automated
 evidence), **OUT OF SCOPE** (deliberately excluded, never a study requirement).
